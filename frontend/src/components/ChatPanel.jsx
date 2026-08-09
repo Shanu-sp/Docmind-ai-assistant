@@ -113,12 +113,11 @@ export default function ChatPanel({
                   {isUser ? (
                     <p className="whitespace-pre-wrap">{msg.content}</p>
                   ) : (
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      className="prose prose-invert prose-xs max-w-none space-y-2"
-                    >
-                      {msg.content}
-                    </ReactMarkdown>
+                    <div className="prose prose-invert prose-xs max-w-none space-y-2">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
                   )}
                 </div>
               </div>
