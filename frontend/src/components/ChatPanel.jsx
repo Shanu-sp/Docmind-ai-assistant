@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, Loader2, Sparkles, MessageSquare } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, MessageSquare, Copy } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -104,7 +104,7 @@ export default function ChatPanel({
                 </div>
 
                 <div
-                  className={`rounded-2xl p-3.5 max-w-[85%] leading-relaxed ${
+                  className={`relative group rounded-2xl p-3.5 max-w-[85%] leading-relaxed ${
                     isUser
                       ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10'
                       : 'bg-zinc-900 border border-zinc-800 text-zinc-200 shadow-sm'
@@ -113,11 +113,20 @@ export default function ChatPanel({
                   {isUser ? (
                     <p className="whitespace-pre-wrap">{msg.content}</p>
                   ) : (
-                    <div className="prose prose-invert prose-xs max-w-none space-y-2">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {msg.content}
-                      </ReactMarkdown>
-                    </div>
+                    <>
+                      <div className="prose prose-invert prose-xs max-w-none space-y-2 select-text">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(msg.content)}
+                        className="opacity-0 group-hover:opacity-100 absolute top-2 right-2 p-1 text-zinc-400 hover:text-indigo-400 bg-zinc-950/80 rounded-md border border-zinc-800 transition-opacity"
+                        title="Copy message"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

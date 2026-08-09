@@ -199,7 +199,7 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-zinc-950 text-zinc-100 select-none">
+    <div className="flex h-screen w-screen overflow-hidden bg-zinc-950 text-zinc-100">
       {/* Sidebar Navigation */}
       <Sidebar
         documents={documents}
