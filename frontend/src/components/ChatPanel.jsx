@@ -43,9 +43,11 @@ export default function ChatPanel({
       {/* Chat Session Header */}
       <div className="h-16 border-b border-zinc-800/80 px-5 flex items-center justify-between bg-zinc-900/40 backdrop-blur-md">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center flex-shrink-0">
-            <Bot className="w-4.5 h-4.5" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="DocMind Logo"
+            className="w-8 h-8 rounded-xl object-cover border border-zinc-700/60 shadow-sm flex-shrink-0"
+          />
           <div className="min-w-0">
             <h2 className="text-xs font-semibold text-zinc-100 truncate">
               {activeSession ? activeSession.title : 'DocMind AI Assistant'}

@@ -26,9 +26,11 @@ export default function Sidebar({
       {/* Brand Header */}
       <div className="p-4 border-b border-zinc-800/80 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-500/20">
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="DocMind Logo"
+            className="w-9 h-9 rounded-xl object-cover border border-zinc-700/60 shadow-md shadow-indigo-500/10"
+          />
           <div>
             <h1 className="font-semibold text-zinc-100 tracking-tight leading-none text-base">DocMind</h1>
             <span className="text-[10px] text-indigo-400 font-medium tracking-wide">AI DOCUMENT WORKSPACE</span>

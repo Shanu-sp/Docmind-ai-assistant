@@ -45,7 +45,26 @@ function App() {
       const sessions = Array.isArray(sessionsData) ? sessionsData : (sessionsData.results || []);
       setChatSessions(sessions);
 
-      if (docs.length > 0) {
+      // Session Persistence: Restore last selected session or document from localStorage
+      const savedSessionId = localStorage.getItem('activeSessionId');
+      const savedDocId = localStorage.getItem('activeDocumentId');
+
+      let restoredSession = null;
+      let restoredDoc = null;
+
+      if (savedSessionId) {
+        restoredSession = sessions.find((s) => String(s.id) === String(savedSessionId));
+      }
+
+      if (savedDocId) {
+        restoredDoc = docs.find((d) => String(d.id) === String(savedDocId));
+      }
+
+      if (restoredSession) {
+        handleSelectSession(restoredSession, docs);
+      } else if (restoredDoc) {
+        handleSelectDocument(restoredDoc, sessions);
+      } else if (docs.length > 0) {
         handleSelectDocument(docs[0], sessions);
       }
     } catch (err) {
@@ -64,6 +83,7 @@ function App() {
 
   const handleSelectDocument = async (doc, existingSessions = chatSessions) => {
     setActiveDocument(doc);
+    localStorage.setItem('activeDocumentId', doc.id);
 
     // Find existing session for this document
     let session = existingSessions.find((s) => s.document === doc.id);
@@ -80,14 +100,19 @@ function App() {
     }
 
     setActiveSession(session);
+    localStorage.setItem('activeSessionId', session.id);
     loadSessionMessages(session.id);
   };
 
-  const handleSelectSession = (session) => {
+  const handleSelectSession = (session, existingDocs = documents) => {
     setActiveSession(session);
+    localStorage.setItem('activeSessionId', session.id);
     if (session.document) {
-      const matchedDoc = documents.find((d) => d.id === session.document);
-      if (matchedDoc) setActiveDocument(matchedDoc);
+      const matchedDoc = existingDocs.find((d) => String(d.id) === String(session.document));
+      if (matchedDoc) {
+        setActiveDocument(matchedDoc);
+        localStorage.setItem('activeDocumentId', matchedDoc.id);
+      }
     }
     loadSessionMessages(session.id);
   };
@@ -125,6 +150,8 @@ function App() {
         } else {
           setActiveDocument(null);
           setActiveSession(null);
+          localStorage.removeItem('activeDocumentId');
+          localStorage.removeItem('activeSessionId');
           setMessages([]);
         }
       }
@@ -144,6 +171,7 @@ function App() {
           handleSelectSession(updatedSessions[0]);
         } else {
           setActiveSession(null);
+          localStorage.removeItem('activeSessionId');
           setMessages([]);
         }
       }
