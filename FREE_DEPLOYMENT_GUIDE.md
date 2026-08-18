@@ -64,7 +64,8 @@ This guide provides a step-by-step deployment procedure to host **DocMind** on t
    - `GEMINI_API_KEY`: `(Your Gemini API Key)`
    - `GOOGLE_CLIENT_ID`: `303095572158-lasdg9d2l7b9phdld1rajhs2sa851f93.apps.googleusercontent.com`
    - `DATABASE_URL`: `(Your Supabase Postgres URI from Step 1)`
-5. Click **Create Web Service**. Copy your backend URL (e.g., `https://docmind-backend.onrender.com`).
+5. Click **Create Web Service**. Copy your backend URL:
+   - **Live Backend URL**: `https://docmind-ai-assistant-backend.onrender.com`
 
 ---
 
@@ -72,32 +73,32 @@ This guide provides a step-by-step deployment procedure to host **DocMind** on t
 
 1. **Create Project on Vercel**:
    - Go to [Vercel.com](https://vercel.com/) and sign in with GitHub.
-   - Click **Add New...** -> **Project** -> Import your repository.
+   - Click **Add New...** -> **Project** -> Import `Shanu-sp/Docmind-ai-assistant`.
 2. **Configure Frontend Build Settings**:
    - **Framework Preset**: `Vite`
    - **Root Directory**: `frontend`
 3. **Add Environment Variables**:
    Under **Environment Variables**, add:
-   - `VITE_GOOGLE_CLIENT_ID`: `303095572158-lasdg9d2l7b9phdld1rajhs2sa851f93.apps.googleusercontent.com`
+   - `VITE_API_BASE_URL`: `https://docmind-ai-assistant-backend.onrender.com/api`
+   - `VITE_GOOGLE_CLIENT_ID`: `303095572158-3thj1a4q36a78dq3tfdnn336nhjdrjlf.apps.googleusercontent.com`
 4. Click **Deploy**.
-5. Copy your live website URL (e.g., `https://docmind.vercel.app`).
+5. Copy your live website URL (e.g., `https://docmind-ai-assistant.vercel.app`).
 
 ---
 
 ## 📋 Step 5: Update OAuth & CORS URLs
 
-1. **Update Backend CORS**:
-   - Add your Vercel URL (`https://docmind.vercel.app`) to `CORS_ALLOWED_ORIGINS` in backend environment variables.
-2. **Update Google OAuth Credentials**:
-   - In Google Cloud Console -> **Credentials** -> Edit your OAuth Client.
-   - Under **Authorized JavaScript Origins**, add your Vercel URL (`https://docmind.vercel.app`).
+1. **Update Google OAuth Credentials**:
+   - In Google Cloud Console -> **Credentials** -> Edit your OAuth Client (`303095572158-3thj1a4q36a78dq3tfdnn336nhjdrjlf`).
+   - Under **Authorized JavaScript Origins**, add your Vercel URL (e.g., `https://docmind-ai-assistant.vercel.app`).
    - Click **Save**.
 
 ---
 
 ## 🎉 Verification Checklist
 
-- [ ] Supabase Postgres connected.
-- [ ] Render Django backend active & SSL secure.
+- [x] Supabase Postgres connected (via Connection Pooler).
+- [x] Render Django backend active & SSL secure: `https://docmind-ai-assistant-backend.onrender.com`.
 - [ ] Vercel React frontend live on custom `.vercel.app` domain.
 - [ ] Google OAuth sign-in functional for all external users.
+
