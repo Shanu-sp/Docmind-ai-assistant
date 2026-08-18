@@ -32,7 +32,9 @@ export default function DocumentViewer({ document: doc, onPromptChipClick, onRea
   const getMediaUrl = (filePath) => {
     if (!filePath) return '';
     if (filePath.startsWith('http')) return filePath;
-    return `http://localhost:8000${filePath}`;
+    const baseApi = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+    const baseUrl = baseApi.replace(/\/api\/?$/, '');
+    return `${baseUrl}${filePath}`;
   };
 
   const handleReanalyzeSubmit = async (e) => {
