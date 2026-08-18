@@ -27,7 +27,7 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="w-72 bg-zinc-950 border-r border-zinc-800/80 flex flex-col h-screen select-none">
+    <aside className="w-72 bg-zinc-950 border-r border-zinc-800/80 flex flex-col h-screen">
       {/* Brand Header */}
       <div className="p-4 border-b border-zinc-800/80 flex items-center justify-between">
         <div className="flex items-center gap-2.5">

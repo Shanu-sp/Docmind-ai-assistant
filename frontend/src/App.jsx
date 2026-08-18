@@ -112,29 +112,50 @@ function App() {
 
     setActiveSession(session);
     localStorage.setItem('activeSessionId', session.id);
+    if (session.messages && Array.isArray(session.messages)) {
+      setMessages(session.messages);
+    } else {
+      setMessages([]);
+    }
     loadSessionMessages(session.id);
   };
 
   const handleSelectSession = (session, existingDocs = documents) => {
     setActiveSession(session);
     localStorage.setItem('activeSessionId', session.id);
+
+    // Instant 0ms display from local cache
+    if (session.messages && Array.isArray(session.messages)) {
+      setMessages(session.messages);
+    } else {
+      setMessages([]);
+    }
+
     if (session.document) {
       const matchedDoc = existingDocs.find((d) => String(d.id) === String(session.document));
       if (matchedDoc) {
         setActiveDocument(matchedDoc);
         localStorage.setItem('activeDocumentId', matchedDoc.id);
       }
+    } else {
+      setActiveDocument(null);
+      localStorage.removeItem('activeDocumentId');
     }
+
     loadSessionMessages(session.id);
   };
 
   const loadSessionMessages = async (sessionId) => {
     try {
       const msgs = await fetchSessionMessages(sessionId);
-      setMessages(Array.isArray(msgs) ? msgs : (msgs.results || []));
+      const messageList = Array.isArray(msgs) ? msgs : (msgs.results || []);
+      setMessages(messageList);
+      // Cache messages inside chatSessions array for instant zero-lag switching
+      setChatSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, messages: messageList } : s))
+      );
     } catch (err) {
       console.error('Failed to load messages:', err);
-      setMessages([]);
     }
   };
 
@@ -223,11 +244,21 @@ function App() {
 
       const response = await sendChatMessage(currentSession.id, content);
       if (response.user_message && response.assistant_message) {
+        const updatedList = [
+          ...messages,
+          response.user_message,
+          response.assistant_message
+        ];
         setMessages((prev) => [
           ...prev.slice(0, prev.length - 1),
           response.user_message,
           response.assistant_message
         ]);
+        setChatSessions((prevSessions) =>
+          prevSessions.map((s) =>
+            s.id === currentSession.id ? { ...s, messages: updatedList } : s
+          )
+        );
       }
     } catch (err) {
       console.error('Failed to send message:', err);
