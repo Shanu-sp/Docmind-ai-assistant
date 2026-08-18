@@ -94,4 +94,3 @@ This guide provides a step-by-step deployment procedure to host **DocMind** on t
 - [x] Render Django backend active & SSL secure: `https://docmind-ai-assistant-backend.onrender.com`.
 - [x] Vercel React frontend live on custom `.vercel.app` domain.
 - [x] Google OAuth sign-in functional for all external users.
-
