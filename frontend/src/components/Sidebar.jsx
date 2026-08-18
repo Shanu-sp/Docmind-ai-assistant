@@ -177,16 +177,23 @@ export default function Sidebar({
           </div>
         )}
 
-        <button
-          onClick={onOpenConfigModal}
-          className="w-full flex items-center justify-between p-2.5 bg-zinc-900/80 hover:bg-zinc-800/80 border border-zinc-800 rounded-xl text-xs transition-colors"
-        >
+        {/* AI Engine Status & Admin Config */}
+        <div className="w-full flex items-center justify-between p-2.5 bg-zinc-900/80 border border-zinc-800 rounded-xl text-xs">
           <div className="flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${aiConfig?.has_api_key ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-            <span className="text-zinc-300 font-medium">{aiConfig?.has_api_key ? 'Gemini 2.5 Flash' : 'Demo Mode'}</span>
+            <span className="text-zinc-300 font-medium">
+              {aiConfig?.has_api_key ? (aiConfig?.mode || 'Gemini 3-Key Pool') : 'Demo Mode'}
+            </span>
           </div>
-          <span className="text-[10px] text-indigo-400 font-medium">Config Key</span>
-        </button>
+          {(user?.is_staff || aiConfig?.is_admin) && (
+            <button
+              onClick={onOpenConfigModal}
+              className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold px-2 py-0.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 transition-colors"
+            >
+              Config
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Logout Confirmation Dialog */}

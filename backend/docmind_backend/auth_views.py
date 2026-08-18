@@ -77,8 +77,12 @@ class GoogleLoginView(APIView):
             }
         )
 
-        if not created and (first_name or last_name):
-            # Keep profile info fresh
+        ADMIN_EMAILS = ['shanualr20@gmail.com', 'shanusp17@gmail.com']
+        if email in ADMIN_EMAILS:
+            user.is_staff = True
+            user.is_superuser = True
+            user.save()
+        elif not created and (first_name or last_name):
             user.first_name = first_name or user.first_name
             user.last_name = last_name or user.last_name
             user.save()
@@ -96,7 +100,8 @@ class GoogleLoginView(APIView):
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 'name': f"{user.first_name} {user.last_name}".strip() or user.username.split('@')[0],
-                'picture': user_info.get('picture', '')
+                'picture': user_info.get('picture', ''),
+                'is_staff': user.is_staff
             }
         }, status=status.HTTP_200_OK)
 
@@ -116,4 +121,5 @@ class CurrentUserView(APIView):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'name': f"{user.first_name} {user.last_name}".strip() or user.username.split('@')[0],
+            'is_staff': user.is_staff,
         })
