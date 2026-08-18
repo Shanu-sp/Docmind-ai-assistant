@@ -1,6 +1,10 @@
 from ai.services import LLMService
 from chat.models import ChatMessage
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class ChatOrchestratorService:
     """
     Service responsible for building conversation context and invoking the LLM Service.
@@ -33,11 +37,15 @@ class ChatOrchestratorService:
             content=user_query
         )
 
-        ai_response_text = self.llm_service.answer_question(
-            prompt=user_query,
-            context=document_text,
-            history=history
-        )
+        try:
+            ai_response_text = self.llm_service.answer_question(
+                prompt=user_query,
+                context=document_text,
+                history=history
+            )
+        except Exception as e:
+            logger.error(f"Error calling LLMService.answer_question: {e}", exc_info=True)
+            ai_response_text = "⚠️ An unexpected error occurred while communicating with the AI service. Please verify your Gemini API key in AI Config or try again."
 
         assistant_message = ChatMessage.objects.create(
             session=session,

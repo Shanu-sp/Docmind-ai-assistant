@@ -52,19 +52,25 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='send-message')
     def send_message(self, request, pk=None):
-        session = self.get_object()
-        serializer = ChatMessageCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            session = self.get_object()
+            serializer = ChatMessageCreateSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
 
-        user_content = serializer.validated_data['content']
+            user_content = serializer.validated_data['content']
 
-        orchestrator = ChatOrchestratorService()
-        user_msg, assistant_msg = orchestrator.handle_user_message(session, user_content)
+            orchestrator = ChatOrchestratorService()
+            user_msg, assistant_msg = orchestrator.handle_user_message(session, user_content)
 
-        return Response({
-            'user_message': ChatMessageSerializer(user_msg).data,
-            'assistant_message': ChatMessageSerializer(assistant_msg).data
-        }, status=status.HTTP_200_OK)
+            return Response({
+                'user_message': ChatMessageSerializer(user_msg).data,
+                'assistant_message': ChatMessageSerializer(assistant_msg).data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {'error': str(e) or 'Failed to send message.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=True, methods=['post'], url_path='stream-message')
     def stream_message(self, request, pk=None):

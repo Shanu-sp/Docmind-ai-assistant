@@ -10,10 +10,11 @@ logger = logging.getLogger(__name__)
 
 # Primary and fallback models for maximum availability
 FALLBACK_MODELS = [
-    "gemini-flash-latest",
-    "gemini-3.6-flash",
-    "gemini-3.1-pro-preview",
-    "gemini-pro-latest",
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-2.5-pro",
+    "gemini-1.5-pro",
 ]
 
 class GeminiProvider(LLMProvider):
@@ -26,7 +27,7 @@ class GeminiProvider(LLMProvider):
     MAX_CONTEXT_CHARS = 1_000_000
 
     def __init__(self, api_key: str = None, model: str = None):
-        self.model = model or os.environ.get("GEMINI_MODEL") or "gemini-flash-latest"
+        self.model = model or os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
         self.api_keys = self._load_api_keys(api_key)
         self.api_key = self.api_keys[0] if self.api_keys else None
         self.client = self._get_client(self.api_key) if self.api_key else None
