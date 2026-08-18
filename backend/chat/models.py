@@ -1,10 +1,18 @@
 from django.db import models
+from django.contrib.auth.models import User
 from documents.models import Document
 
 class ChatSession(models.Model):
     """
-    Represents a conversation session linked to an uploaded Document.
+    Represents a conversation session linked to an uploaded Document and owned by a User.
     """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='chat_sessions',
+        null=True,
+        blank=True
+    )
     document = models.ForeignKey(
         Document, 
         on_delete=models.CASCADE, 

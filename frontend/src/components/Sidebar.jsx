@@ -1,5 +1,6 @@
 import React from 'react';
-import { FileText, Plus, MessageSquare, Trash2, Sparkles, FileCode, FileSpreadsheet } from 'lucide-react';
+import { FileText, Plus, MessageSquare, Trash2, FileCode, FileSpreadsheet, LogOut, User } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({
   documents = [],
@@ -14,6 +15,8 @@ export default function Sidebar({
   aiConfig = null,
   onOpenConfigModal
 }) {
+  const { user, logout } = useAuth();
+
   const getFileIcon = (fileType) => {
     const ext = (fileType || '').toLowerCase();
     if (ext === 'pdf') return <FileText className="w-4 h-4 text-rose-400 flex-shrink-0" />;
@@ -144,8 +147,34 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* AI Key Status Footer */}
-      <div className="p-3 border-t border-zinc-800/80 bg-zinc-950">
+      {/* User Profile & Config Footer */}
+      <div className="p-3 border-t border-zinc-800/80 bg-zinc-950 space-y-2">
+        {/* User Card */}
+        {user && (
+          <div className="flex items-center justify-between p-2 bg-zinc-900/90 rounded-xl border border-zinc-800/80">
+            <div className="flex items-center gap-2 min-w-0 pr-1">
+              {user.picture ? (
+                <img src={user.picture} alt={user.name} className="w-7 h-7 rounded-full border border-zinc-700 object-cover" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 flex items-center justify-center text-xs font-bold">
+                  {(user.name || user.email || 'U')[0].toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-zinc-200 truncate">{user.name || user.username}</p>
+                <p className="text-[10px] text-zinc-500 truncate">{user.email}</p>
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              className="p-1.5 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 rounded-lg transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <button
           onClick={onOpenConfigModal}
           className="w-full flex items-center justify-between p-2.5 bg-zinc-900/80 hover:bg-zinc-800/80 border border-zinc-800 rounded-xl text-xs transition-colors"
@@ -160,4 +189,3 @@ export default function Sidebar({
     </aside>
   );
 }
-

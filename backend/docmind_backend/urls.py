@@ -18,11 +18,16 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from ai.views import AIConfigView
+from .auth_views import GoogleLoginView, CurrentUserView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/auth/google/', GoogleLoginView.as_view(), name='auth-google'),
+    path('api/auth/me/', CurrentUserView.as_view(), name='auth-me'),
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
     path('api/ai/config/', AIConfigView.as_view(), name='ai-config'),
     path('api/documents/', include('documents.urls')),
     path('api/chat/', include('chat.urls')),

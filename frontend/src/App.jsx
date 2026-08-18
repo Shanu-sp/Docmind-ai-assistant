@@ -4,6 +4,8 @@ import DocumentViewer from './components/DocumentViewer';
 import ChatPanel from './components/ChatPanel';
 import DocumentUpload from './components/DocumentUpload';
 import AIConfigModal from './components/AIConfigModal';
+import LoginModal from './components/LoginModal';
+import { useAuth } from './context/AuthContext';
 import {
   fetchDocuments,
   fetchChatSessions,
@@ -15,9 +17,10 @@ import {
   reanalyzeDocument,
   fetchAIConfig
 } from './services/api';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 
 function App() {
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [documents, setDocuments] = useState([]);
   const [activeDocument, setActiveDocument] = useState(null);
   const [chatSessions, setChatSessions] = useState([]);
@@ -29,11 +32,19 @@ function App() {
   const [sending, setSending] = useState(false);
   const [initialPrompt, setInitialPrompt] = useState('');
 
-  // Initial Data Fetching
+  // Initial Data Fetching upon User Authentication
   useEffect(() => {
-    loadInitialData();
-    loadAIConfig();
-  }, []);
+    if (isAuthenticated) {
+      loadInitialData();
+      loadAIConfig();
+    } else {
+      setDocuments([]);
+      setChatSessions([]);
+      setActiveDocument(null);
+      setActiveSession(null);
+      setMessages([]);
+    }
+  }, [isAuthenticated]);
 
   const loadInitialData = async () => {
     try {
@@ -226,8 +237,19 @@ function App() {
     handleSendMessage(promptText);
   };
 
+  if (authLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-zinc-950 text-zinc-400">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-zinc-950 text-zinc-100">
+      {/* Show Auth Modal if not logged in */}
+      {!isAuthenticated && <LoginModal />}
+
       {/* Sidebar Navigation */}
       <Sidebar
         documents={documents}

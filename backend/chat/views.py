@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import ChatSession, ChatMessage
@@ -9,11 +9,14 @@ from django.http import StreamingHttpResponse
 
 class ChatSessionViewSet(viewsets.ModelViewSet):
     """
-    Thin DRF ViewSet for Chat Sessions & Messages.
+    DRF ViewSet for User-Scoped Chat Sessions & Messages.
     Delegates LLM message orchestration to the Service layer.
     """
-    queryset = ChatSession.objects.all()
     serializer_class = ChatSessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return ChatSession.objects.filter(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         document_id = request.data.get('document')
@@ -22,14 +25,14 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
         if not title and document_id:
             try:
                 from documents.models import Document
-                doc = Document.objects.get(id=document_id)
+                doc = Document.objects.get(id=document_id, user=request.user)
                 title = f"Chat: {doc.title}"
             except Exception:
                 title = "New Chat Session"
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        session = serializer.save(title=title or "New Chat Session")
+        session = serializer.save(user=request.user, title=title or "New Chat Session")
 
         return Response(self.get_serializer(session).data, status=status.HTTP_201_CREATED)
 

@@ -1,5 +1,5 @@
 import os
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import Document
@@ -9,11 +9,14 @@ from ai.services import LLMService
 
 class DocumentViewSet(viewsets.ModelViewSet):
     """
-    Thin DRF ViewSet for Document management.
-    Delegates parsing and summary generation to the Service layer.
+    DRF ViewSet for User-Scoped Document management.
+    Restricts access strictly to documents owned by the authenticated user.
     """
-    queryset = Document.objects.all()
     serializer_class = DocumentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Document.objects.filter(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         serializer = DocumentUploadSerializer(data=request.data)
@@ -22,8 +25,9 @@ class DocumentViewSet(viewsets.ModelViewSet):
         uploaded_file = serializer.validated_data['file']
         ext = os.path.splitext(uploaded_file.name)[1].lower().replace('.', '')
 
-        # 1. Create Document Instance
+        # 1. Create Document Instance bound to request.user
         document = Document.objects.create(
+            user=request.user,
             title=uploaded_file.name,
             file=uploaded_file,
             file_type=ext,

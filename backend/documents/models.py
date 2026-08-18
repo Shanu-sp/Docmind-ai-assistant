@@ -1,9 +1,12 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class Document(models.Model):
     """
     Represents an uploaded document (PDF, DOCX, TXT) and its extracted metadata & insights.
+    Belongs to a specific User for multi-tenant data isolation.
     """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='documents', null=True, blank=True)
     title = models.CharField(max_length=255)
     file = models.FileField(upload_to='documents/')
     file_type = models.CharField(max_length=50, blank=True)  # pdf, docx, txt

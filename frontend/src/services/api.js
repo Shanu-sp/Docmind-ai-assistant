@@ -9,6 +9,47 @@ export const apiClient = axios.create({
   },
 });
 
+// Request Interceptor: Inject JWT Access Token
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('docmind_access_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response Interceptor: Handle 401 Unauthorized
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response && error.response.status === 401) {
+      // Clear token and trigger logout broadcast event if unauthorized
+      const token = localStorage.getItem('docmind_access_token');
+      if (token) {
+        localStorage.removeItem('docmind_access_token');
+        localStorage.removeItem('docmind_refresh_token');
+        localStorage.removeItem('docmind_user');
+        window.dispatchEvent(new Event('docmind_unauthorized'));
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Auth Endpoints
+export const googleLogin = async (googleIdToken) => {
+  const response = await apiClient.post('/auth/google/', { token: googleIdToken });
+  return response.data;
+};
+
+export const fetchCurrentUser = async () => {
+  const response = await apiClient.get('/auth/me/');
+  return response.data;
+};
+
 // Document Endpoints
 export const fetchDocuments = async () => {
   const response = await apiClient.get('/documents/');
@@ -82,5 +123,3 @@ export const updateAIConfig = async (apiKey) => {
 };
 
 export default apiClient;
-
-
