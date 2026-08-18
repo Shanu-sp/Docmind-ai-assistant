@@ -222,9 +222,10 @@ function App() {
       }
     } catch (err) {
       console.error('Failed to send message:', err);
+      const detail = err.response?.data?.error || err.response?.data?.detail;
       const errorMsg = {
         sender: 'assistant',
-        content: '⚠️ Failed to reach AI backend. Please verify Django server is running.',
+        content: detail ? `⚠️ ${detail}` : '⚠️ Server is currently spinning up or unreachable. Please try your question again in a moment.',
         timestamp: new Date().toISOString()
       };
       setMessages((prev) => [...prev, errorMsg]);
