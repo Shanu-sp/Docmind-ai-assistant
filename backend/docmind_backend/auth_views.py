@@ -77,15 +77,20 @@ class GoogleLoginView(APIView):
             }
         )
 
-        ADMIN_EMAILS = ['shanualr20@gmail.com', 'shanusp17@gmail.com']
+        ADMIN_EMAILS = ['shanualr20@gmail.com']
         if email in ADMIN_EMAILS:
             user.is_staff = True
             user.is_superuser = True
             user.save()
-        elif not created and (first_name or last_name):
-            user.first_name = first_name or user.first_name
-            user.last_name = last_name or user.last_name
-            user.save()
+        else:
+            if user.is_staff or user.is_superuser:
+                user.is_staff = False
+                user.is_superuser = False
+                user.save()
+            elif not created and (first_name or last_name):
+                user.first_name = first_name or user.first_name
+                user.last_name = last_name or user.last_name
+                user.save()
 
         # 3. Issue DocMind JWT Tokens
         refresh = RefreshToken.for_user(user)
