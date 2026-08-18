@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
-import { Bot, Shield, Sparkles, FileText, Lock, UserCheck } from 'lucide-react';
+import { Bot, FileText, Lock } from 'lucide-react';
 
 export default function LoginModal() {
   const { loginWithGoogleToken } = useAuth();
@@ -20,22 +20,6 @@ export default function LoginModal() {
 
   const handleGoogleError = () => {
     setError('Google Sign-In prompt was closed or failed.');
-  };
-
-  // Demo Login Handler for instant developer / offline demo testing
-  const handleDemoLogin = async (demoEmail, demoName) => {
-    setError('');
-    setLoading(true);
-    // Create an unverified mock JWT for demo mode
-    const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-    const payload = btoa(JSON.stringify({ email: demoEmail, name: demoName, given_name: demoName }));
-    const mockToken = `${header}.${payload}.mockSignature`;
-
-    const result = await loginWithGoogleToken(mockToken);
-    setLoading(false);
-    if (!result.success) {
-      setError(result.error);
-    }
   };
 
   return (
@@ -83,32 +67,6 @@ export default function LoginModal() {
               text="continue_with"
               width="100%"
             />
-          </div>
-
-          <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-zinc-800"></div>
-            <span className="flex-shrink mx-4 text-[11px] text-zinc-500 uppercase tracking-wider font-semibold">Or Quick Demo Sign-In</span>
-            <div className="flex-grow border-t border-zinc-800"></div>
-          </div>
-
-          {/* Quick Demo Accounts */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => handleDemoLogin("alice@example.com", "Alice Smith")}
-              disabled={loading}
-              className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700 text-xs font-medium text-zinc-200 transition-colors disabled:opacity-50"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-blue-400" />
-              <span>Demo Account 1</span>
-            </button>
-            <button
-              onClick={() => handleDemoLogin("bob@example.com", "Bob Johnson")}
-              disabled={loading}
-              className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700 text-xs font-medium text-zinc-200 transition-colors disabled:opacity-50"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-purple-400" />
-              <span>Demo Account 2</span>
-            </button>
           </div>
         </div>
 
