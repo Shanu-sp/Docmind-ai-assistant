@@ -202,8 +202,6 @@ function App() {
   };
 
   const handleSendMessage = async (content) => {
-    if (!activeSession) return;
-
     setSending(true);
     setInitialPrompt('');
 
@@ -212,7 +210,18 @@ function App() {
     setMessages((prev) => [...prev, tempUserMsg]);
 
     try {
-      const response = await sendChatMessage(activeSession.id, content);
+      let currentSession = activeSession;
+      if (!currentSession) {
+        // Auto-create session on first message
+        const docId = activeDocument ? activeDocument.id : null;
+        const title = activeDocument ? `Chat: ${activeDocument.title}` : 'General AI Chat';
+        currentSession = await createChatSession(docId, title);
+        setChatSessions((prev) => [currentSession, ...prev]);
+        setActiveSession(currentSession);
+        localStorage.setItem('activeSessionId', currentSession.id);
+      }
+
+      const response = await sendChatMessage(currentSession.id, content);
       if (response.user_message && response.assistant_message) {
         setMessages((prev) => [
           ...prev.slice(0, prev.length - 1),

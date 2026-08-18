@@ -94,6 +94,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('docmind_access_token');
     localStorage.removeItem('docmind_refresh_token');
     localStorage.removeItem('docmind_user');
+    localStorage.removeItem('activeDocumentId');
+    localStorage.removeItem('activeSessionId');
   };
 
   return (

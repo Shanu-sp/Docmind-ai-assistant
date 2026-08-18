@@ -22,17 +22,24 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
         document_id = request.data.get('document')
         title = request.data.get('title')
 
-        if not title and document_id:
+        doc = None
+        if document_id:
             try:
                 from documents.models import Document
                 doc = Document.objects.get(id=document_id, user=request.user)
-                title = f"Chat: {doc.title}"
+                if not title:
+                    title = f"Chat: {doc.title}"
             except Exception:
-                title = "New Chat Session"
+                doc = None
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        session = serializer.save(user=request.user, title=title or "New Chat Session")
+        if not title:
+            title = "General AI Chat"
+
+        session = ChatSession.objects.create(
+            user=request.user,
+            document=doc,
+            title=title
+        )
 
         return Response(self.get_serializer(session).data, status=status.HTTP_201_CREATED)
 
