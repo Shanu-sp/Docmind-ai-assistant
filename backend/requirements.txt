@@ -1,4 +1,4 @@
-﻿annotated-types==0.8.0
+annotated-types==0.8.0
 anyio==4.14.2
 asgiref==3.12.1
 certifi==2026.7.22
@@ -43,3 +43,4 @@ typing_extensions==4.16.0
 tzdata==2026.3
 urllib3==2.7.0
 websockets==16.1.1
+whitenoise==6.12.0

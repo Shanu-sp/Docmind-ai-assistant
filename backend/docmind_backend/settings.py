@@ -27,12 +27,12 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-vo=1tpmogqi#t-x$aw7q)qu*2f#7h*2kmg)y&p4%k-1m^8m=a0'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-vo=1tpmogqi#t-x$aw7q)qu*2f#7h*2kmg)y&p4%k-1m^8m=a0')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get('ALLOWED_HOSTS', '*').split(',') if host.strip()]
 
 
 # Application definition
@@ -58,6 +58,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # CORS Middleware placed high up
     'django.middleware.common.CommonMiddleware',
@@ -144,7 +145,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files (Uploaded User Documents)
 MEDIA_URL = '/media/'
@@ -155,8 +157,18 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://localhost:\d+$",
     r"^http://127\.0\.0\.1:\d+$",
+    r"^https://.*\.vercel\.app$",
+    r"^https://.*\.onrender\.com$",
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+    'https://*.vercel.app',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
 
 # Django REST Framework & SimpleJWT Settings
 from datetime import timedelta
