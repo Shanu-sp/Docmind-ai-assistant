@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FileText, Plus, MessageSquare, Trash2, FileCode, FileSpreadsheet, LogOut, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import LogoutConfirmModal from './LogoutConfirmModal';
 
 export default function Sidebar({
   documents = [],
@@ -16,6 +17,7 @@ export default function Sidebar({
   onOpenConfigModal
 }) {
   const { user, logout } = useAuth();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const getFileIcon = (fileType) => {
     const ext = (fileType || '').toLowerCase();
@@ -166,7 +168,7 @@ export default function Sidebar({
               </div>
             </div>
             <button
-              onClick={logout}
+              onClick={() => setShowLogoutModal(true)}
               className="p-1.5 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 rounded-lg transition-colors"
               title="Sign Out"
             >
@@ -186,6 +188,13 @@ export default function Sidebar({
           <span className="text-[10px] text-indigo-400 font-medium">Config Key</span>
         </button>
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      <LogoutConfirmModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={logout}
+      />
     </aside>
   );
 }
