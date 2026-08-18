@@ -23,6 +23,7 @@ class GeminiProvider(LLMProvider):
     """
 
     _key_index = 0
+    MAX_CONTEXT_CHARS = 1_000_000
 
     def __init__(self, api_key: str = None, model: str = None):
         self.model = model or os.environ.get("GEMINI_MODEL") or "gemini-flash-latest"
