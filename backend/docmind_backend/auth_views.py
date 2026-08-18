@@ -128,3 +128,109 @@ class CurrentUserView(APIView):
             'name': f"{user.first_name} {user.last_name}".strip() or user.username.split('@')[0],
             'is_staff': user.is_staff,
         })
+
+
+class EmailRegisterView(APIView):
+    """
+    Endpoint for creating a new user account with Email & Password.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').lower().strip()
+        password = request.data.get('password', '').strip()
+        name = request.data.get('name', '').strip()
+
+        if not email or not password:
+            return Response({'error': 'Email and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if len(password) < 6:
+            return Response({'error': 'Password must be at least 6 characters long.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(username=email).exists() or User.objects.filter(email=email).exists():
+            return Response({'error': 'An account with this email already exists. Please Sign In.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        name_parts = name.split(' ', 1)
+        first_name = name_parts[0] if name_parts else ''
+        last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name
+        )
+
+        ADMIN_EMAILS = ['shanualr20@gmail.com']
+        if email in ADMIN_EMAILS:
+            user.is_staff = True
+            user.is_superuser = True
+            user.save()
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'name': f"{user.first_name} {user.last_name}".strip() or user.username.split('@')[0],
+                'picture': '',
+                'is_staff': user.is_staff
+            }
+        }, status=status.HTTP_201_CREATED)
+
+
+class EmailLoginView(APIView):
+    """
+    Endpoint for authenticating with Email & Password.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from django.contrib.auth import authenticate
+        email = request.data.get('email', '').lower().strip()
+        password = request.data.get('password', '').strip()
+
+        if not email or not password:
+            return Response({'error': 'Email and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = authenticate(request, username=email, password=password)
+        if not user:
+            try:
+                user_obj = User.objects.get(email=email)
+                user = authenticate(request, username=user_obj.username, password=password)
+            except User.DoesNotExist:
+                user = None
+
+        if not user:
+            return Response({'error': 'Invalid email or password. Please verify your credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        ADMIN_EMAILS = ['shanualr20@gmail.com']
+        if email in ADMIN_EMAILS:
+            if not user.is_staff or not user.is_superuser:
+                user.is_staff = True
+                user.is_superuser = True
+                user.save()
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'name': f"{user.first_name} {user.last_name}".strip() or user.username.split('@')[0],
+                'picture': '',
+                'is_staff': user.is_staff
+            }
+        }, status=status.HTTP_200_OK)

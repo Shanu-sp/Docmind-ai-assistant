@@ -45,6 +45,16 @@ export const googleLogin = async (googleIdToken) => {
   return response.data;
 };
 
+export const emailLogin = async (email, password) => {
+  const response = await apiClient.post('/auth/login/', { email, password });
+  return response.data;
+};
+
+export const registerUser = async (email, password, name = '') => {
+  const response = await apiClient.post('/auth/register/', { email, password, name });
+  return response.data;
+};
+
 export const fetchCurrentUser = async () => {
   const response = await apiClient.get('/auth/me/');
   return response.data;

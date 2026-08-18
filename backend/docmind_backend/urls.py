@@ -21,11 +21,13 @@ from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from ai.views import AIConfigView
-from .auth_views import GoogleLoginView, CurrentUserView
+from .auth_views import GoogleLoginView, CurrentUserView, EmailLoginView, EmailRegisterView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/google/', GoogleLoginView.as_view(), name='auth-google'),
+    path('api/auth/login/', EmailLoginView.as_view(), name='auth-login'),
+    path('api/auth/register/', EmailRegisterView.as_view(), name='auth-register'),
     path('api/auth/me/', CurrentUserView.as_view(), name='auth-me'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
     path('api/ai/config/', AIConfigView.as_view(), name='ai-config'),

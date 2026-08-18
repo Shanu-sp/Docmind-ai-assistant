@@ -1,5 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { googleLogin as apiGoogleLogin, fetchCurrentUser } from '../services/api';
+import {
+  googleLogin as apiGoogleLogin,
+  emailLogin as apiEmailLogin,
+  registerUser as apiRegisterUser,
+  fetchCurrentUser
+} from '../services/api';
 
 const AuthContext = createContext();
 
@@ -36,21 +41,49 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('docmind_unauthorized', handleUnauthorized);
   }, []);
 
+  const setAuthSession = (access, refresh, loggedUser) => {
+    setAccessToken(access);
+    setUser(loggedUser);
+    localStorage.setItem('docmind_access_token', access);
+    localStorage.setItem('docmind_refresh_token', refresh);
+    localStorage.setItem('docmind_user', JSON.stringify(loggedUser));
+  };
+
   const loginWithGoogleToken = async (credential) => {
     try {
       const data = await apiGoogleLogin(credential);
       const { access, refresh, user: loggedUser } = data;
-
-      setAccessToken(access);
-      setUser(loggedUser);
-
-      localStorage.setItem('docmind_access_token', access);
-      localStorage.setItem('docmind_refresh_token', refresh);
-      localStorage.setItem('docmind_user', JSON.stringify(loggedUser));
+      setAuthSession(access, refresh, loggedUser);
       return { success: true, user: loggedUser };
     } catch (error) {
       console.error("Google login error:", error);
       const errMsg = error.response?.data?.error || "Google Authentication failed.";
+      return { success: false, error: errMsg };
+    }
+  };
+
+  const loginWithEmail = async (email, password) => {
+    try {
+      const data = await apiEmailLogin(email, password);
+      const { access, refresh, user: loggedUser } = data;
+      setAuthSession(access, refresh, loggedUser);
+      return { success: true, user: loggedUser };
+    } catch (error) {
+      console.error("Email login error:", error);
+      const errMsg = error.response?.data?.error || "Login failed. Please check your email and password.";
+      return { success: false, error: errMsg };
+    }
+  };
+
+  const registerWithEmail = async (email, password, name = '') => {
+    try {
+      const data = await apiRegisterUser(email, password, name);
+      const { access, refresh, user: loggedUser } = data;
+      setAuthSession(access, refresh, loggedUser);
+      return { success: true, user: loggedUser };
+    } catch (error) {
+      console.error("Registration error:", error);
+      const errMsg = error.response?.data?.error || "Registration failed. Please try again.";
       return { success: false, error: errMsg };
     }
   };
@@ -71,6 +104,8 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!accessToken && !!user,
         loading,
         loginWithGoogleToken,
+        loginWithEmail,
+        registerWithEmail,
         logout
       }}
     >
