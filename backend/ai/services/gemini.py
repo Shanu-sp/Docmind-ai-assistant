@@ -26,70 +26,109 @@ class GeminiProvider(LLMProvider):
 
     MAX_CONTEXT_CHARS = 1_000_000  # Expand to 1M chars to fully utilize Gemini Flash's 1M+ token window
 
+    FALLBACK_MODELS = [
+        "gemini-2.5-flash",
+        "gemini-1.5-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-pro",
+    ]
+
+    def _get_models_to_try(self):
+        models = [self.model] if self.model else []
+        for m in self.FALLBACK_MODELS:
+            if m not in models:
+                models.append(m)
+        return models
+
     def generate_response(self, prompt: str, context: str = "", history: List[Dict[str, str]] = None) -> str:
         """
-        Generates a contextual response using Gemini LLM.
+        Generates a contextual response using Gemini LLM with automatic multi-model fallback.
         """
         if not self.client:
             return self._mock_response(prompt, context)
 
-        try:
-            formatted_prompt = ""
-            if context:
-                formatted_prompt += f"Document Context:\n\"\"\"\n{context[:self.MAX_CONTEXT_CHARS]}\n\"\"\"\n\n"
+        formatted_prompt = ""
+        if context:
+            formatted_prompt += f"Document Context:\n\"\"\"\n{context[:self.MAX_CONTEXT_CHARS]}\n\"\"\"\n\n"
 
-            if history:
-                formatted_prompt += "Previous Conversation History:\n"
-                for msg in history:
-                    sender = msg.get("sender", "user").capitalize()
-                    content = msg.get("content", "")
-                    formatted_prompt += f"{sender}: {content}\n"
-                formatted_prompt += "\n"
+        if history:
+            formatted_prompt += "Previous Conversation History:\n"
+            for msg in history:
+                sender = msg.get("sender", "user").capitalize()
+                content = msg.get("content", "")
+                formatted_prompt += f"{sender}: {content}\n"
+            formatted_prompt += "\n"
 
-            formatted_prompt += f"User Question: {prompt}\n\nPlease provide a clear, well-structured markdown answer based on the document context and conversation history."
+        formatted_prompt += f"User Question: {prompt}\n\nPlease provide a clear, well-structured markdown answer based on the document context and conversation history."
 
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=formatted_prompt
-            )
-            return response.text.strip()
-        except Exception as e:
-            logger.error(f"Gemini API generate_response error: {e}")
-            return f"[Gemini Error]: Unable to generate response. Details: {str(e)}"
+        last_error = None
+        for model_name in self._get_models_to_try():
+            try:
+                response = self.client.models.generate_content(
+                    model=model_name,
+                    contents=formatted_prompt
+                )
+                if response and response.text:
+                    return response.text.strip()
+            except Exception as e:
+                err_msg = str(e)
+                logger.warning(f"Gemini model {model_name} failed: {err_msg}. Trying fallback...")
+                last_error = e
+                if any(code in err_msg for code in ["503", "429", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "demand"]):
+                    continue
+                else:
+                    break
+
+        logger.error(f"All Gemini models exhausted. Final error: {last_error}")
+        return "⚠️ The AI service is currently experiencing high global traffic. Please wait a few moments and try your question again."
 
     def stream_response(self, prompt: str, context: str = "", history: List[Dict[str, str]] = None):
         """
-        Generator function yielding streaming response chunks from Gemini API.
+        Generator function yielding streaming response chunks from Gemini API with fallback.
         """
         if not self.client:
             yield self._mock_response(prompt, context)
             return
 
-        try:
-            formatted_prompt = ""
-            if context:
-                formatted_prompt += f"Document Context:\n\"\"\"\n{context[:self.MAX_CONTEXT_CHARS]}\n\"\"\"\n\n"
+        formatted_prompt = ""
+        if context:
+            formatted_prompt += f"Document Context:\n\"\"\"\n{context[:self.MAX_CONTEXT_CHARS]}\n\"\"\"\n\n"
 
-            if history:
-                formatted_prompt += "Previous Conversation History:\n"
-                for msg in history:
-                    sender = msg.get("sender", "user").capitalize()
-                    content = msg.get("content", "")
-                    formatted_prompt += f"{sender}: {content}\n"
-                formatted_prompt += "\n"
+        if history:
+            formatted_prompt += "Previous Conversation History:\n"
+            for msg in history:
+                sender = msg.get("sender", "user").capitalize()
+                content = msg.get("content", "")
+                formatted_prompt += f"{sender}: {content}\n"
+            formatted_prompt += "\n"
 
-            formatted_prompt += f"User Question: {prompt}\n\nPlease provide a clear, well-structured markdown answer."
+        formatted_prompt += f"User Question: {prompt}\n\nPlease provide a clear, well-structured markdown answer."
 
-            response_stream = self.client.models.generate_content_stream(
-                model=self.model,
-                contents=formatted_prompt
-            )
-            for chunk in response_stream:
-                if chunk.text:
-                    yield chunk.text
-        except Exception as e:
-            logger.error(f"Gemini API stream_response error: {e}")
-            yield f"[Gemini Error]: Stream interrupted. Details: {str(e)}"
+        streamed_any = False
+        last_error = None
+        for model_name in self._get_models_to_try():
+            try:
+                response_stream = self.client.models.generate_content_stream(
+                    model=model_name,
+                    contents=formatted_prompt
+                )
+                for chunk in response_stream:
+                    if chunk.text:
+                        streamed_any = True
+                        yield chunk.text
+                if streamed_any:
+                    return
+            except Exception as e:
+                err_msg = str(e)
+                logger.warning(f"Gemini streaming model {model_name} failed: {err_msg}")
+                last_error = e
+                if not streamed_any and any(code in err_msg for code in ["503", "429", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "demand"]):
+                    continue
+                else:
+                    break
+
+        if not streamed_any:
+            yield "⚠️ The AI service is currently experiencing high global traffic. Please wait a few moments and try again."
 
     def generate_summary_and_insights(self, document_text: str, focus: str = None) -> Dict[str, Any]:
         """
