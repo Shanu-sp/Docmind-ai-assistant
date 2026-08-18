@@ -6,13 +6,13 @@ This guide provides a step-by-step deployment procedure to host **DocMind** on t
 
 ## 🏆 Chosen 100% Free Technology Stack
 
-| Layer | Chosen Platform | Why It's The Best Choice |
-| :--- | :--- | :--- |
-| **Frontend** | **Vercel** | Industry standard for React/Vite, instant GitHub deployments, fast CDN. |
-| **Backend** | **Render** | Native Python/Django web service support, automated SSL, free tier. |
-| **Database & Files**| **Supabase** | Managed PostgreSQL DB + 1 GB File Storage bucket in one dashboard (0 credit card). |
-| **Authentication** | **Google Cloud Console** | Official Google OAuth 2.0 Single Sign-On (100% free unlimited logins). |
-| **AI LLM Engine** | **Google AI Studio** | Gemini 2.5 Flash API key (Free tier). |
+| Layer                | Chosen Platform          | Why It's The Best Choice                                                           |
+| :------------------- | :----------------------- | :--------------------------------------------------------------------------------- |
+| **Frontend**         | **Vercel**               | Industry standard for React/Vite, instant GitHub deployments, fast CDN.            |
+| **Backend**          | **Render**               | Native Python/Django web service support, automated SSL, free tier.                |
+| **Database & Files** | **Supabase**             | Managed PostgreSQL DB + 1 GB File Storage bucket in one dashboard (0 credit card). |
+| **Authentication**   | **Google Cloud Console** | Official Google OAuth 2.0 Single Sign-On (100% free unlimited logins).             |
+| **AI LLM Engine**    | **Google AI Studio**     | Gemini 2.5 Flash API key (Free tier).                                              |
 
 ---
 
@@ -38,7 +38,7 @@ This guide provides a step-by-step deployment procedure to host **DocMind** on t
 1. Go to [Google Cloud Console](https://console.cloud.google.com/).
 2. Select your `DocMind AI` project.
 3. Go to **APIs & Services** -> **OAuth consent screen**.
-4. Click **Publish App** (moves status from *Testing* to *In Production*).
+4. Click **Publish App** (moves status from _Testing_ to _In Production_).
 5. Under **Authorized Domains**, add `vercel.app` and `onrender.com`.
 
 ---
@@ -86,19 +86,12 @@ This guide provides a step-by-step deployment procedure to host **DocMind** on t
 
 ---
 
-## 📋 Step 5: Update OAuth & CORS URLs
-
-1. **Update Google OAuth Credentials**:
-   - In Google Cloud Console -> **Credentials** -> Edit your OAuth Client (`303095572158-3thj1a4q36a78dq3tfdnn336nhjdrjlf`).
-   - Under **Authorized JavaScript Origins**, add your Vercel URL (e.g., `https://docmind-ai-assistant.vercel.app`).
-   - Click **Save**.
-
 ---
 
 ## 🎉 Verification Checklist
 
 - [x] Supabase Postgres connected (via Connection Pooler).
 - [x] Render Django backend active & SSL secure: `https://docmind-ai-assistant-backend.onrender.com`.
-- [ ] Vercel React frontend live on custom `.vercel.app` domain.
-- [ ] Google OAuth sign-in functional for all external users.
+- [x] Vercel React frontend live on custom `.vercel.app` domain.
+- [x] Google OAuth sign-in functional for all external users.
 
