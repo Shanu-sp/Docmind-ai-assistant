@@ -188,6 +188,9 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     'contenttype',
     'x-requested-with',
     'authorization',
+    'content-type',
+    'accept',
+    'origin',
 ]
 
 CORS_ALLOW_METHODS = list(default_methods) + [
@@ -198,6 +201,9 @@ CORS_ALLOW_METHODS = list(default_methods) + [
     'DELETE',
     'OPTIONS',
 ]
+
+# Allow Cross-Origin Opener Policy for Vercel <-> Render API
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 # CSRF Trusted Origins
 CSRF_TRUSTED_ORIGINS = [
