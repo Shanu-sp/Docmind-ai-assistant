@@ -17,6 +17,8 @@ class LLMService:
         """
         Answers a user query given document context and chat history.
         """
+        if not prompt or not prompt.strip():
+            return "Please provide a valid question."
         return self.provider.generate_response(prompt=prompt, context=context, history=history)
 
     def stream_question(self, prompt: str, context: str = "", history: List[Dict[str, str]] = None):

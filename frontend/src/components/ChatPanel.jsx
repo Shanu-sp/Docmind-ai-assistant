@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, Loader2, Sparkles, MessageSquare, Copy } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, Copy } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -39,9 +39,9 @@ export default function ChatPanel({
   };
 
   return (
-    <div className="w-[420px] bg-zinc-950 flex flex-col h-screen border-l border-zinc-800/80">
+    <div className="w-full lg:w-[380px] xl:w-[420px] bg-zinc-950 flex flex-col h-full lg:h-screen lg:border-l border-zinc-800/80">
       {/* Chat Session Header */}
-      <div className="h-16 border-b border-zinc-800/80 px-5 flex items-center justify-between bg-zinc-900/40 backdrop-blur-md">
+      <div className="h-16 border-b border-zinc-800/80 px-4 sm:px-5 flex items-center justify-between bg-zinc-900/40 backdrop-blur-md flex-shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <img
             src="/logo.png"
@@ -60,7 +60,7 @@ export default function ChatPanel({
       </div>
 
       {/* Message History Stream */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-500 space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
@@ -152,7 +152,7 @@ export default function ChatPanel({
       </div>
 
       {/* Input Bar */}
-      <div className="p-4 border-t border-zinc-800/80 bg-zinc-950">
+      <div className="p-3 sm:p-4 border-t border-zinc-800/80 bg-zinc-950 flex-shrink-0">
         <form onSubmit={handleSubmit} className="relative flex items-center">
           <input
             type="text"

@@ -18,7 +18,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      if (accessToken) {
+      const storedToken = localStorage.getItem('docmind_access_token');
+      if (storedToken) {
         try {
           const userData = await fetchCurrentUser();
           setUser(userData);

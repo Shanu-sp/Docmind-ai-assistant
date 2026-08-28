@@ -17,7 +17,7 @@ import {
   reanalyzeDocument,
   fetchAIConfig
 } from './services/api';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Menu, FileText, MessageSquare, Plus } from 'lucide-react';
 
 function App() {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -31,6 +31,8 @@ function App() {
   const [aiConfig, setAiConfig] = useState(null);
   const [sending, setSending] = useState(false);
   const [initialPrompt, setInitialPrompt] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState('doc'); // 'doc' | 'chat'
 
   // Initial Data Fetching upon User Authentication
   useEffect(() => {
@@ -275,6 +277,7 @@ function App() {
   };
 
   const handlePromptChipClick = (promptText) => {
+    setMobileTab('chat');
     handleSendMessage(promptText);
   };
 
@@ -287,52 +290,125 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-zinc-950 text-zinc-100">
+    <div className="flex h-[100dvh] w-screen overflow-hidden bg-zinc-950 text-zinc-100 flex-col lg:flex-row">
       {/* Show Auth Modal if not logged in */}
       {!isAuthenticated && <LoginModal />}
 
-      {/* Sidebar Navigation */}
+      {/* Sidebar Navigation (Desktop persistent + Mobile slide-over drawer) */}
       <Sidebar
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
         documents={documents}
         activeDocument={activeDocument}
-        onSelectDocument={(doc) => handleSelectDocument(doc)}
-        onNewDocumentClick={() => setShowUploadModal(true)}
+        onSelectDocument={(doc) => {
+          handleSelectDocument(doc);
+          setMobileTab('doc');
+          setIsMobileMenuOpen(false);
+        }}
+        onNewDocumentClick={() => {
+          setShowUploadModal(true);
+          setIsMobileMenuOpen(false);
+        }}
         chatSessions={chatSessions}
         activeSession={activeSession}
-        onSelectSession={handleSelectSession}
+        onSelectSession={(session) => {
+          handleSelectSession(session);
+          setMobileTab('chat');
+          setIsMobileMenuOpen(false);
+        }}
         onDeleteDocument={handleDeleteDocument}
         onDeleteSession={handleDeleteSession}
         aiConfig={aiConfig}
-        onOpenConfigModal={() => setShowConfigModal(true)}
+        onOpenConfigModal={() => {
+          setShowConfigModal(true);
+          setIsMobileMenuOpen(false);
+        }}
       />
 
-      {/* Main Workspace */}
-      <main className="flex flex-1 overflow-hidden">
+      {/* Mobile Top Navigation Header (< lg) */}
+      <header className="lg:hidden h-14 bg-zinc-900/90 border-b border-zinc-800/80 px-3 flex items-center justify-between flex-shrink-0 z-30 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800/80 rounded-xl transition-colors active:scale-95"
+            title="Open Menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-1.5">
+            <img src="/logo.png" alt="DocMind" className="w-6 h-6 rounded-lg object-cover" />
+            <span className="font-semibold text-sm text-zinc-100">DocMind</span>
+          </div>
+        </div>
+
+        {/* Mobile Tab Segmented Switcher & Quick Upload */}
+        <div className="flex items-center gap-2">
+          <div className="flex bg-zinc-950 p-0.5 rounded-xl border border-zinc-800 text-xs font-medium">
+            <button
+              onClick={() => setMobileTab('doc')}
+              className={`flex items-center gap-1 px-3 py-1 rounded-lg transition-all ${
+                mobileTab === 'doc'
+                  ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Doc</span>
+            </button>
+            <button
+              onClick={() => setMobileTab('chat')}
+              className={`flex items-center gap-1 px-3 py-1 rounded-lg transition-all ${
+                mobileTab === 'chat'
+                  ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Chat</span>
+            </button>
+          </div>
+
+          <button
+            onClick={() => setShowUploadModal(true)}
+            className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-sm transition-colors active:scale-95"
+            title="Upload Document"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      </header>
+
+      {/* Main Workspace (Desktop: Side-by-side, Mobile: Switched by mobileTab) */}
+      <main className="flex flex-1 flex-col lg:flex-row overflow-hidden min-h-0">
         {/* Document Viewer & Insights Pane */}
-        <DocumentViewer
-          document={activeDocument}
-          onPromptChipClick={handlePromptChipClick}
-          onReanalyzeDocument={handleReanalyzeDocument}
-        />
+        <div className={`flex-1 flex flex-col min-h-0 overflow-hidden ${mobileTab === 'doc' ? 'flex' : 'hidden lg:flex'}`}>
+          <DocumentViewer
+            document={activeDocument}
+            onPromptChipClick={handlePromptChipClick}
+            onReanalyzeDocument={handleReanalyzeDocument}
+          />
+        </div>
 
         {/* Interactive Chat Panel */}
-        <ChatPanel
-          activeSession={activeSession}
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          sending={sending}
-          initialPrompt={initialPrompt}
-          documentTitle={activeDocument?.title}
-        />
+        <div className={`w-full lg:w-[380px] xl:w-[420px] flex flex-col min-h-0 overflow-hidden flex-shrink-0 ${mobileTab === 'chat' ? 'flex' : 'hidden lg:flex'}`}>
+          <ChatPanel
+            activeSession={activeSession}
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            sending={sending}
+            initialPrompt={initialPrompt}
+            documentTitle={activeDocument?.title}
+          />
+        </div>
       </main>
 
       {/* Upload Document Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg">
+          <div className="relative w-full max-w-lg mx-auto">
             <button
               onClick={() => setShowUploadModal(false)}
-              className="absolute -top-12 right-0 p-2 text-zinc-400 hover:text-white transition-colors"
+              className="absolute -top-10 right-0 sm:-top-12 sm:right-0 p-2 text-zinc-400 hover:text-white transition-colors"
             >
               <X className="w-6 h-6" />
             </button>

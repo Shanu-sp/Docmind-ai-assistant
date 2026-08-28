@@ -90,11 +90,20 @@ WSGI_APPLICATION = 'docmind_backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
+import sys
 import dj_database_url
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
+TESTING = 'test' in sys.argv
 
-if DATABASE_URL:
+if TESTING:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
+elif DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.parse(
             DATABASE_URL,
@@ -109,6 +118,7 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
 
 
 # Password validation

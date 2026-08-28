@@ -15,7 +15,7 @@ class LLMProviderInterfaceTests(TestCase):
         )
 
     def test_provider_summarize_and_insights(self):
-        provider = GeminiProvider(api_key=None)
+        provider = GeminiProvider(api_key="")
         service = LLMService(provider=provider)
 
         result = service.summarize_document(self.sample_text)
@@ -28,7 +28,7 @@ class LLMProviderInterfaceTests(TestCase):
         self.assertGreater(len(result["suggested_questions"]), 0)
 
     def test_provider_answer_question(self):
-        provider = GeminiProvider(api_key=None)
+        provider = GeminiProvider(api_key="")
         service = LLMService(provider=provider)
 
         prompt = "What is this document about?"

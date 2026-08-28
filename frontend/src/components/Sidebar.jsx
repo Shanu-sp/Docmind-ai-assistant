@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { FileText, Plus, MessageSquare, Trash2, FileCode, FileSpreadsheet, LogOut, User } from 'lucide-react';
+import { FileText, Plus, MessageSquare, Trash2, FileCode, FileSpreadsheet, LogOut, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import LogoutConfirmModal from './LogoutConfirmModal';
 
 export default function Sidebar({
+  isOpen = false,
+  onClose,
   documents = [],
   activeDocument = null,
   onSelectDocument,
@@ -27,21 +29,45 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="w-72 bg-zinc-950 border-r border-zinc-800/80 flex flex-col h-screen">
-      {/* Brand Header */}
-      <div className="p-4 border-b border-zinc-800/80 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <img
-            src="/logo.png"
-            alt="DocMind Logo"
-            className="w-9 h-9 rounded-xl object-cover border border-zinc-700/60 shadow-md shadow-indigo-500/10"
-          />
-          <div>
-            <h1 className="font-semibold text-zinc-100 tracking-tight leading-none text-base">DocMind</h1>
-            <span className="text-[10px] text-indigo-400 font-medium tracking-wide">AI DOCUMENT WORKSPACE</span>
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+          onClick={onClose}
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-zinc-950 border-r border-zinc-800/80 flex flex-col h-full lg:h-screen transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 flex-shrink-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Brand Header */}
+        <div className="p-4 border-b border-zinc-800/80 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/logo.png"
+              alt="DocMind Logo"
+              className="w-9 h-9 rounded-xl object-cover border border-zinc-700/60 shadow-md shadow-indigo-500/10"
+            />
+            <div>
+              <h1 className="font-semibold text-zinc-100 tracking-tight leading-none text-base">DocMind</h1>
+              <span className="text-[10px] text-indigo-400 font-medium tracking-wide">AI DOCUMENT WORKSPACE</span>
+            </div>
           </div>
+
+          {/* Close button on mobile */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1.5 text-zinc-400 hover:text-white rounded-lg lg:hidden transition-colors"
+              title="Close Menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
-      </div>
 
       {/* New Document Button */}
       <div className="p-3">
@@ -206,5 +232,6 @@ export default function Sidebar({
         onConfirm={logout}
       />
     </aside>
+  </>
   );
 }

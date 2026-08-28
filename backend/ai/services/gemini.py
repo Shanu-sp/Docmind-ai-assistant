@@ -10,11 +10,11 @@ logger = logging.getLogger(__name__)
 
 # Primary and fallback models for maximum availability
 FALLBACK_MODELS = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-2.5-pro",
-    "gemini-1.5-pro",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-latest",
 ]
 
 class GeminiProvider(LLMProvider):
@@ -27,15 +27,18 @@ class GeminiProvider(LLMProvider):
     MAX_CONTEXT_CHARS = 1_000_000
 
     def __init__(self, api_key: str = None, model: str = None):
-        self.model = model or os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
+        self.model = model or os.environ.get("GEMINI_MODEL") or "gemini-3.6-flash"
         self.api_keys = self._load_api_keys(api_key)
         self.api_key = self.api_keys[0] if self.api_keys else None
         self.client = self._get_client(self.api_key) if self.api_key else None
 
     @classmethod
-    def _load_api_keys(cls, override_key: str = None) -> List[str]:
-        if override_key and override_key.strip():
-            return [override_key.strip()]
+    def _load_api_keys(cls, override_key = None) -> List[str]:
+        if override_key is not None:
+            if isinstance(override_key, list):
+                return [k.strip() for k in override_key if k and k.strip()]
+            if isinstance(override_key, str):
+                return [override_key.strip()] if override_key.strip() else []
 
         keys_str = os.environ.get("GEMINI_API_KEYS", "") or os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_API_KEY", "")
         keys = [k.strip() for k in keys_str.split(",") if k.strip()]
@@ -53,7 +56,7 @@ class GeminiProvider(LLMProvider):
         """
         Returns list of (client, key_label) ordered by round-robin rotation.
         """
-        keys = self._load_api_keys()
+        keys = self.api_keys
         if not keys:
             return []
 

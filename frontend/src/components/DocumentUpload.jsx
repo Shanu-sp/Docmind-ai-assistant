@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, FileCode, FileSpreadsheet } from 'lucide-react';
+import { UploadCloud, FileText, AlertCircle, Loader2, FileCode, FileSpreadsheet } from 'lucide-react';
 import { uploadDocument } from '../services/api';
 
 export default function DocumentUpload({ onUploadSuccess }) {

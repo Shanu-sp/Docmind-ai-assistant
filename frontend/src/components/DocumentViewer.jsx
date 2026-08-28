@@ -52,11 +52,11 @@ export default function DocumentViewer({ document: doc, onPromptChipClick, onRea
   };
 
   return (
-    <div className="flex-1 bg-zinc-950 flex flex-col h-screen border-r border-zinc-800/80 overflow-hidden">
+    <div className="flex-1 bg-zinc-950 flex flex-col h-full lg:h-screen lg:border-r border-zinc-800/80 overflow-hidden">
       {/* Header Bar */}
-      <div className="h-16 border-b border-zinc-800/80 px-6 flex items-center justify-between bg-zinc-900/40 backdrop-blur-md">
-        <div className="flex items-center gap-3 min-w-0 pr-4">
-          <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+      <div className="min-h-16 py-3 px-4 sm:px-6 border-b border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-900/40 backdrop-blur-md flex-shrink-0">
+        <div className="flex items-center gap-3 min-w-0 pr-2">
+          <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex-shrink-0">
             <FileText className="w-5 h-5 flex-shrink-0" />
           </div>
           <div className="min-w-0">
@@ -75,11 +75,11 @@ export default function DocumentViewer({ document: doc, onPromptChipClick, onRea
         </div>
 
         {/* View Tabs & Action */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-0.5 sm:pb-0 flex-shrink-0">
           <div className="flex bg-zinc-900 p-1 rounded-xl border border-zinc-800 text-xs font-medium">
             <button
               onClick={() => setActiveTab('summary')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${
                 activeTab === 'summary'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-zinc-400 hover:text-zinc-200'
@@ -90,7 +90,7 @@ export default function DocumentViewer({ document: doc, onPromptChipClick, onRea
             </button>
             <button
               onClick={() => setActiveTab('text')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${
                 activeTab === 'text'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-zinc-400 hover:text-zinc-200'
@@ -102,7 +102,7 @@ export default function DocumentViewer({ document: doc, onPromptChipClick, onRea
             {doc.file_type === 'pdf' && (
               <button
                 onClick={() => setActiveTab('preview')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${
                   activeTab === 'preview'
                     ? 'bg-indigo-600 text-white shadow-sm'
                     : 'text-zinc-400 hover:text-zinc-200'
@@ -117,7 +117,7 @@ export default function DocumentViewer({ document: doc, onPromptChipClick, onRea
       </div>
 
       {/* Content Body */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
         {activeTab === 'summary' && (
           <div className="space-y-6 max-w-3xl">
             {/* Executive Summary Card */}
