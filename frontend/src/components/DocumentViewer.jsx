@@ -31,7 +31,7 @@ export default function DocumentViewer({ document: doc, onPromptChipClick, onRea
 
   const getMediaUrl = (filePath) => {
     if (!filePath) return '';
-    const baseApi = import.meta.env.VITE_API_BASE_URL || 'https://docmind-ai-assistant-backend.onrender.com/api';
+    const baseApi = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
     const baseUrl = baseApi.replace(/\/api\/?$/, '');
     return `${baseUrl}${filePath}`;
   };
