@@ -47,6 +47,7 @@ class ChatMessage(models.Model):
     )
     sender = models.CharField(max_length=20, choices=SENDER_CHOICES)
     content = models.TextField()
+    citations = models.JSONField(default=list, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:

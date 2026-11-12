@@ -22,6 +22,7 @@ lxml==6.1.1
 packaging==26.3
 pdfminer.six==20260107
 pdfplumber==0.11.10
+pgvector==0.5.1
 pillow==12.3.0
 psycopg2-binary==2.9.12
 pyasn1==0.6.4

@@ -68,3 +68,47 @@ class DocumentUploadAndExtractionTests(TestCase):
         response = self.client.post("/api/documents/", {"file": uploaded_file}, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_document_extractor_page_awareness(self):
+        from documents.services.extractor import DocumentExtractor
+        import tempfile
+
+        # 1. Test TXT file with virtual pagination
+        with tempfile.NamedTemporaryFile(suffix='.txt', delete=False, mode='w', encoding='utf-8') as f:
+            # Write 2500 chars across multiple paragraphs to trigger 2 virtual pages (limit 2000)
+            f.write("Paragraph 1: " + "A" * 1200 + "\n\nParagraph 2: " + "B" * 1200)
+            temp_path = f.name
+
+        try:
+            pages = DocumentExtractor.extract_pages(temp_path, 'txt')
+            self.assertEqual(len(pages), 2)
+            self.assertEqual(pages[0]['page_number'], 1)
+            self.assertEqual(pages[1]['page_number'], 2)
+            self.assertTrue(pages[0]['text'].startswith("Paragraph 1:"))
+            self.assertTrue(pages[1]['text'].startswith("Paragraph 2:"))
+
+            # Test extract_text backward compatibility
+            full_text = DocumentExtractor.extract_text(temp_path, 'txt')
+            self.assertIn("Paragraph 1:", full_text)
+            self.assertIn("Paragraph 2:", full_text)
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+    def test_document_extractor_error_handling(self):
+        from documents.services.extractor import DocumentExtractor
+        # Non-existent file
+        with self.assertRaises(FileNotFoundError):
+            DocumentExtractor.extract_pages("non_existent_file.pdf", "pdf")
+
+        # Unsupported format
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.xyz', delete=False) as f:
+            temp_path = f.name
+        try:
+            with self.assertRaises(ValueError):
+                DocumentExtractor.extract_pages(temp_path, "xyz")
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+

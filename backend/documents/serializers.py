@@ -14,10 +14,11 @@ class DocumentSerializer(serializers.ModelSerializer):
             'extracted_text',
             'executive_summary',
             'suggested_questions',
+            'indexing_status',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'file_type', 'file_size', 'extracted_text', 'executive_summary', 'suggested_questions', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'file_type', 'file_size', 'extracted_text', 'executive_summary', 'suggested_questions', 'indexing_status', 'created_at', 'updated_at']
 
 
 class DocumentUploadSerializer(serializers.Serializer):

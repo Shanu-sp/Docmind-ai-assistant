@@ -4,8 +4,8 @@ from .models import ChatSession, ChatMessage
 class ChatMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatMessage
-        fields = ['id', 'session', 'sender', 'content', 'timestamp']
-        read_only_fields = ['id', 'timestamp']
+        fields = ['id', 'session', 'sender', 'content', 'citations', 'timestamp']
+        read_only_fields = ['id', 'citations', 'timestamp']
 
 
 class ChatSessionSerializer(serializers.ModelSerializer):
