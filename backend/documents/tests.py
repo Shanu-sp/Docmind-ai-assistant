@@ -111,4 +111,144 @@ class DocumentUploadAndExtractionTests(TestCase):
             if os.path.exists(temp_path):
                 os.remove(temp_path)
 
+    def test_recursive_semantic_chunker(self):
+        from documents.services.chunker import RecursiveSemanticChunker
+
+        # Test overlap validation
+        with self.assertRaises(ValueError):
+            RecursiveSemanticChunker(chunk_size=100, chunk_overlap=150)
+
+        # Test chunking
+        chunker = RecursiveSemanticChunker(chunk_size=200, chunk_overlap=50)
+        pages = [
+            {"page_number": 1, "text": "Sentence A. " * 15},
+            {"page_number": 2, "text": "Sentence B. " * 15}
+        ]
+        chunks = chunker.chunk_pages(pages)
+        self.assertGreater(len(chunks), 1)
+        self.assertEqual(chunks[0]['page_number'], 1)
+        self.assertEqual(chunks[0]['chunk_index'], 0)
+        self.assertEqual(chunks[-1]['page_number'], 2)
+        self.assertIn('char_count', chunks[0]['metadata'])
+
+        # Test empty input
+        self.assertEqual(chunker.chunk_pages([]), [])
+        self.assertEqual(chunker.chunk_pages([{"page_number": 1, "text": ""}]), [])
+
+    @patch("ai.services.embeddings.EmbeddingService.generate_batch_embeddings")
+    def test_document_indexer_success_and_idempotency(self, mock_batch_embeddings):
+        from documents.services.indexer import DocumentIndexer
+        from documents.models import DocumentChunk
+
+        # Mock embedding response with dummy 768-dim float vector
+        dummy_vector = [0.01] * 768
+        mock_batch_embeddings.side_effect = lambda texts: [dummy_vector for _ in texts]
+
+        # Create a document
+        doc = Document.objects.create(
+            user=self.user,
+            title="Indexer Test Document",
+            file_type="txt",
+            extracted_text="This is a test paragraph for indexing. " * 10
+        )
+
+        indexer = DocumentIndexer()
+        success = indexer.index_document(doc)
+        self.assertTrue(success)
+
+        doc.refresh_from_db()
+        self.assertEqual(doc.indexing_status, "ready")
+        self.assertGreater(doc.chunks.count(), 0)
+
+        first_chunk = doc.chunks.first()
+        self.assertEqual(first_chunk.user, self.user)
+        self.assertEqual(first_chunk.page_number, 1)
+        self.assertEqual(len(first_chunk.embedding), 768)
+
+        # Idempotency check: Re-index the document
+        initial_chunk_count = doc.chunks.count()
+        success_reindex = indexer.index_document(doc)
+        self.assertTrue(success_reindex)
+        doc.refresh_from_db()
+        self.assertEqual(doc.chunks.count(), initial_chunk_count)
+
+    @patch("ai.services.embeddings.EmbeddingService.generate_batch_embeddings")
+    def test_document_indexer_edge_cases(self, mock_batch_embeddings):
+        from documents.services.indexer import DocumentIndexer
+
+        indexer = DocumentIndexer()
+
+        # 1. Document with no user
+        doc_no_user = Document.objects.create(
+            user=None,
+            title="Orphan Document",
+            extracted_text="Some text without owner"
+        )
+        self.assertFalse(indexer.index_document(doc_no_user))
+        doc_no_user.refresh_from_db()
+        self.assertEqual(doc_no_user.indexing_status, "failed")
+
+        # 2. Document with no file and no text
+        doc_empty = Document.objects.create(
+            user=self.user,
+            title="Empty Document",
+            extracted_text=""
+        )
+        self.assertFalse(indexer.index_document(doc_empty))
+        doc_empty.refresh_from_db()
+        self.assertEqual(doc_empty.indexing_status, "failed")
+
+        # 3. Document indexing with API error
+        mock_batch_embeddings.side_effect = RuntimeError("Gemini Quota Exceeded")
+        doc_err = Document.objects.create(
+            user=self.user,
+            title="Error Document",
+            extracted_text="Some valid content to embed"
+        )
+        self.assertFalse(indexer.index_document(doc_err))
+        doc_err.refresh_from_db()
+        self.assertEqual(doc_err.indexing_status, "failed")
+
+    @patch("ai.services.embeddings.EmbeddingService.generate_batch_embeddings")
+    def test_index_documents_management_command(self, mock_batch_embeddings):
+        from django.core.management import call_command
+        from io import StringIO
+
+        dummy_vector = [0.05] * 768
+        mock_batch_embeddings.side_effect = lambda texts: [dummy_vector for _ in texts]
+
+        doc = Document.objects.create(
+            user=self.user,
+            title="Command Test Doc",
+            extracted_text="Content for management command testing."
+        )
+
+        out = StringIO()
+        call_command("index_documents", f"--doc-id={doc.id}", stdout=out)
+        output = out.getvalue()
+
+        self.assertIn("READY", output)
+        doc.refresh_from_db()
+        self.assertEqual(doc.indexing_status, "ready")
+        self.assertGreater(doc.chunks.count(), 0)
+
+    @patch("documents.views.LLMService.summarize_document")
+    @patch("ai.services.embeddings.EmbeddingService.generate_batch_embeddings")
+    def test_reindex_api_action(self, mock_batch_embeddings, mock_summarize):
+        dummy_vector = [0.02] * 768
+        mock_batch_embeddings.side_effect = lambda texts: [dummy_vector for _ in texts]
+
+        doc = Document.objects.create(
+            user=self.user,
+            title="API Reindex Doc",
+            extracted_text="Content to test reindex action."
+        )
+
+        response = self.client.post(f"/api/documents/{doc.id}/reindex/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["indexing_status"], "ready")
+
+
+
 

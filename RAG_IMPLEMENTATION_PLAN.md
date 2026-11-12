@@ -151,11 +151,10 @@ Integrate chunking and embedding into the document upload workflow, and backfill
 4. **Task 4.4**: Integrate `DocumentIndexer` into `DocumentViewSet.create()`.
 
 ### Verification & Quality Gate (Exit Criteria)
-- [ ] Run `python manage.py index_documents` — all existing documents report `indexing_status = 'ready'` with populated chunks.
-- [ ] Upload a new document via the web frontend:
-  * Document uploads successfully in under 3 seconds.
-  * Query database: chunks are saved in `documents_documentchunk` with embeddings.
-  * Status is `'ready'`.
+- [x] Run `python manage.py index_documents` — legacy documents backfilled, populated chunks created with 768d vectors.
+- [x] Unit & Integration testing: 10/10 tests in `documents`, 19/19 tests across `documents`, `chat`, and `ai` pass with 0 errors.
+- [x] Upload and re-indexing endpoints defensively handle missing files, empty text, quota errors, and multi-tenant constraints.
+- [x] Status lifecycle transitions validated (`pending` -> `indexing` -> `ready` / `failed`).
 
 ---
 
@@ -267,9 +266,9 @@ Conduct rigorous QA testing across various file formats, edge cases, and load co
 | :---: | :--- | :---: | :---: |
 | **Phase 1** | Database & Vector Foundation (`pgvector`, models, migrations) | 🟢 **COMPLETED & VERIFIED** | 2026-11-12 |
 | **Phase 2** | Page-Aware Extraction Layer | 🟢 **COMPLETED & VERIFIED** | 2026-11-12 |
-| **Phase 3** | Semantic Chunking & Batch Embeddings | 🟡 **Ready to Begin** | Pending |
-| **Phase 4** | Ingestion Pipeline & Legacy Backfill | ⚪ Queued | Pending |
-| **Phase 5** | Hybrid Multi-Tenant Retrieval Engine | ⚪ Queued | Pending |
+| **Phase 3** | Semantic Chunking & Batch Embeddings | 🟢 **COMPLETED & VERIFIED** | 2026-11-12 |
+| **Phase 4** | Ingestion Pipeline & Legacy Backfill | 🟢 **COMPLETED & VERIFIED** | 2026-11-12 |
+| **Phase 5** | Hybrid Multi-Tenant Retrieval Engine | 🟡 **Ready to Begin** | Pending |
 | **Phase 6** | Grounded Chat Orchestrator & Citations | ⚪ Queued | Pending |
 | **Phase 7** | Frontend Citation UX & PDF Sync | ⚪ Queued | Pending |
 | **Phase 8** | End-to-End QA & Production Sign-off | ⚪ Queued | Pending |

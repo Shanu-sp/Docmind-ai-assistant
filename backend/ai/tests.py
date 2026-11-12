@@ -46,3 +46,22 @@ class LLMProviderInterfaceTests(TestCase):
         answer_res = service.answer_question("")
         self.assertEqual(answer_res, "Please provide a valid question.")
 
+    def test_embedding_service_empty_input(self):
+        from ai.services import EmbeddingService
+        service = EmbeddingService()
+        self.assertEqual(service.generate_batch_embeddings([]), [])
+
+    def test_embedding_service_dimension(self):
+        from ai.services import EmbeddingService
+        service = EmbeddingService()
+        # Verify single and batch embedding dimension (768d)
+        vec = service.generate_embedding("Test embedding text")
+        self.assertEqual(len(vec), 768)
+        self.assertIsInstance(vec[0], float)
+
+        batch_vecs = service.generate_batch_embeddings(["Chunk A", "Chunk B"])
+        self.assertEqual(len(batch_vecs), 2)
+        self.assertEqual(len(batch_vecs[0]), 768)
+        self.assertEqual(len(batch_vecs[1]), 768)
+
+

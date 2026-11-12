@@ -1,11 +1,15 @@
 import os
+import logging
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import Document
 from .serializers import DocumentSerializer, DocumentUploadSerializer
 from .services.extractor import DocumentExtractor
+from .services.indexer import DocumentIndexer
 from ai.services import LLMService
+
+logger = logging.getLogger(__name__)
 
 class DocumentViewSet(viewsets.ModelViewSet):
     """
@@ -46,10 +50,42 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
             document.save()
         except Exception as e:
-            print(f"Extraction or AI processing failed for document {document.id}: {e}")
+            logger.error(f"Extraction or AI processing failed for document {document.id}: {e}")
+
+        # 3. RAG Vector Indexing Pipeline (Chunking & Embedding)
+        try:
+            indexer = DocumentIndexer()
+            indexer.index_document(document)
+            document.refresh_from_db()
+        except Exception as e:
+            logger.error(f"Vector indexing failed for document {document.id}: {e}")
 
         response_serializer = self.get_serializer(document)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='reindex')
+    def reindex(self, request, pk=None):
+        """
+        Manually trigger vector re-indexing for a document.
+        """
+        document = self.get_object()
+        try:
+            indexer = DocumentIndexer()
+            success = indexer.index_document(document)
+            document.refresh_from_db()
+            if success:
+                serializer = self.get_serializer(document)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    'error': 'Document indexing failed. Check server logs.',
+                    'indexing_status': document.indexing_status
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as e:
+            logger.error(f"Re-indexing failed for document {document.id}: {e}")
+            return Response({'error': f'Re-indexing failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'], url_path='reanalyze')
     def reanalyze(self, request, pk=None):
