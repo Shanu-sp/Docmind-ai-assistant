@@ -33,6 +33,7 @@ function App() {
   const [initialPrompt, setInitialPrompt] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState('doc'); // 'doc' | 'chat'
+  const [targetPage, setTargetPage] = useState(null); // Active PDF citation page jump
 
   // Initial Data Fetching upon User Authentication
   useEffect(() => {
@@ -96,6 +97,7 @@ function App() {
 
   const handleSelectDocument = async (doc, existingSessions = chatSessions) => {
     setActiveDocument(doc);
+    setTargetPage(null);
     localStorage.setItem('activeDocumentId', doc.id);
 
     // Find existing session for this document
@@ -124,6 +126,7 @@ function App() {
 
   const handleSelectSession = (session, existingDocs = documents) => {
     setActiveSession(session);
+    setTargetPage(null);
     localStorage.setItem('activeSessionId', session.id);
 
     // Instant 0ms display from local cache
@@ -145,6 +148,14 @@ function App() {
     }
 
     loadSessionMessages(session.id);
+  };
+
+  const handleCitationClick = ({ page, sourceId, chunkId }) => {
+    if (page) {
+      setTargetPage(page);
+      // On mobile viewports, automatically jump to document pane
+      setMobileTab('doc');
+    }
   };
 
   const loadSessionMessages = async (sessionId) => {
@@ -384,6 +395,8 @@ function App() {
         <div className={`flex-1 flex flex-col min-h-0 overflow-hidden ${mobileTab === 'doc' ? 'flex' : 'hidden lg:flex'}`}>
           <DocumentViewer
             document={activeDocument}
+            targetPage={targetPage}
+            onClearTargetPage={() => setTargetPage(null)}
             onPromptChipClick={handlePromptChipClick}
             onReanalyzeDocument={handleReanalyzeDocument}
           />
@@ -395,6 +408,7 @@ function App() {
             activeSession={activeSession}
             messages={messages}
             onSendMessage={handleSendMessage}
+            onCitationClick={handleCitationClick}
             sending={sending}
             initialPrompt={initialPrompt}
             documentTitle={activeDocument?.title}

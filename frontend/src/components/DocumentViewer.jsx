@@ -1,11 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Sparkles, HelpCircle, Eye, AlignLeft, HardDrive, RotateCw, Loader2, Send } from 'lucide-react';
 
-export default function DocumentViewer({ document: doc, onPromptChipClick, onReanalyzeDocument }) {
+export default function DocumentViewer({
+  document: doc,
+  targetPage = null,
+  onClearTargetPage,
+  onPromptChipClick,
+  onReanalyzeDocument
+}) {
   const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'text' | 'preview'
   const [focusInput, setFocusInput] = useState('');
   const [showFocusInput, setShowFocusInput] = useState(false);
   const [reanalyzing, setReanalyzing] = useState(false);
+
+  // Sync tab and viewer position when user clicks a citation page pill
+  useEffect(() => {
+    if (targetPage) {
+      if (doc?.file_type === 'pdf') {
+        setActiveTab('preview');
+      } else {
+        setActiveTab('text');
+      }
+    }
+  }, [targetPage, doc?.file_type]);
 
   if (!doc) {
     return (
@@ -205,6 +222,24 @@ export default function DocumentViewer({ document: doc, onPromptChipClick, onRea
 
         {activeTab === 'text' && (
           <div className="p-5 bg-zinc-900/60 border border-zinc-800 rounded-2xl max-w-3xl">
+            {targetPage && (
+              <div className="bg-emerald-950/80 border border-emerald-800/80 rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between text-xs text-emerald-300 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>
+                    Viewing virtual <strong>Page {targetPage}</strong> referenced by AI citation
+                  </span>
+                </div>
+                {onClearTargetPage && (
+                  <button
+                    onClick={onClearTargetPage}
+                    className="text-[11px] text-emerald-400 hover:text-emerald-200 underline cursor-pointer"
+                  >
+                    Dismiss
+                  </button>
+                )}
+              </div>
+            )}
             <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">Extracted Plain Text</h3>
             <pre className="text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap font-mono bg-zinc-950/60 p-4 rounded-xl border border-zinc-800 max-h-[600px] overflow-y-auto">
               {doc.extracted_text || 'No text extracted.'}
@@ -214,10 +249,29 @@ export default function DocumentViewer({ document: doc, onPromptChipClick, onRea
 
         {activeTab === 'preview' && doc.file_type === 'pdf' && (
           <div className="w-full h-[650px] bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 flex flex-col">
+            {targetPage && (
+              <div className="bg-emerald-950/80 border-b border-emerald-800/80 px-4 py-2.5 flex items-center justify-between text-xs text-emerald-300 flex-shrink-0 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>
+                    Navigated to <strong>Page {targetPage}</strong> referenced in AI response
+                  </span>
+                </div>
+                {onClearTargetPage && (
+                  <button
+                    onClick={onClearTargetPage}
+                    className="text-[11px] text-emerald-400 hover:text-emerald-200 underline cursor-pointer"
+                  >
+                    Dismiss
+                  </button>
+                )}
+              </div>
+            )}
             <iframe
-              src={getMediaUrl(doc.file)}
+              key={`${getMediaUrl(doc.file)}-page-${targetPage || 'root'}`}
+              src={targetPage ? `${getMediaUrl(doc.file)}#page=${targetPage}` : getMediaUrl(doc.file)}
               title="PDF Preview"
-              className="w-full h-full border-none"
+              className="w-full flex-1 border-none"
             />
           </div>
         )}

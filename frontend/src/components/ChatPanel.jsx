@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, Loader2, Sparkles, Copy } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, Copy, BookOpen, ExternalLink } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -7,6 +7,7 @@ export default function ChatPanel({
   activeSession,
   messages = [],
   onSendMessage,
+  onCitationClick,
   sending = false,
   initialPrompt = '',
   documentTitle = ''
@@ -36,6 +37,15 @@ export default function ChatPanel({
       e.preventDefault();
       handleSubmit();
     }
+  };
+
+  // Converts in-text citation patterns like [Source 1 (Page 2)] into markdown links
+  // which will be rendered as interactive clickable citation pill badges.
+  const formatMessageContentWithCitations = (content) => {
+    if (!content) return '';
+    return content
+      .replace(/\[Source\s+(\d+)\s*\((?:Page\s*)?(\d+)\)\]/gi, '[$1 · p.$2](#jump-page-$2)')
+      .replace(/\[Source\s+(\d+)\]/gi, '[$1](#jump-source-$1)');
   };
 
   return (
@@ -117,10 +127,90 @@ export default function ChatPanel({
                   ) : (
                     <>
                       <div className="prose prose-invert prose-xs max-w-none space-y-2 select-text">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {msg.content}
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            a: ({ href, children, ...props }) => {
+                              if (href && href.startsWith('#jump-page-')) {
+                                const pageNum = parseInt(href.replace('#jump-page-', ''), 10);
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      onCitationClick && onCitationClick({ page: pageNum });
+                                    }}
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 text-[11px] font-semibold text-emerald-300 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 rounded cursor-pointer transition-all active:scale-95 shadow-sm align-baseline"
+                                    title={`Click to jump to Page ${pageNum}`}
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                    <span>{children}</span>
+                                  </button>
+                                );
+                              }
+                              return (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-indigo-400 hover:underline"
+                                  {...props}
+                                >
+                                  {children}
+                                </a>
+                              );
+                            }
+                          }}
+                        >
+                          {formatMessageContentWithCitations(msg.content)}
                         </ReactMarkdown>
                       </div>
+
+                      {/* Referenced Sources Pill Bar */}
+                      {msg.citations && Array.isArray(msg.citations) && msg.citations.length > 0 && (
+                        <div className="mt-3 pt-2.5 border-t border-zinc-800/80">
+                          <div className="flex items-center justify-between gap-1 mb-2">
+                            <div className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-400">
+                              <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Referenced Sources ({msg.citations.length})</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {msg.citations.map((citation, cIdx) => (
+                              <button
+                                key={cIdx}
+                                type="button"
+                                onClick={() =>
+                                  onCitationClick &&
+                                  onCitationClick({
+                                    page: citation.page_number,
+                                    sourceId: citation.source_id,
+                                    chunkId: citation.chunk_id
+                                  })
+                                }
+                                className="group/pill inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/70 border border-emerald-800/50 hover:border-emerald-600/70 rounded-lg transition-all text-left cursor-pointer active:scale-95 shadow-sm"
+                                title={
+                                  citation.snippet
+                                    ? `Page ${citation.page_number || 'N/A'}: ${citation.snippet}`
+                                    : `Source ${citation.source_id}`
+                                }
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 group-hover/pill:scale-125 transition-transform flex-shrink-0" />
+                                <span className="font-semibold text-emerald-200">
+                                  {citation.page_number ? `p. ${citation.page_number}` : `Source ${citation.source_id}`}
+                                </span>
+                                {citation.snippet && (
+                                  <span className="text-[10px] text-zinc-400 truncate max-w-[130px] group-hover/pill:text-zinc-200">
+                                    {citation.snippet.replace(/\n+/g, ' ')}
+                                  </span>
+                                )}
+                                <ExternalLink className="w-2.5 h-2.5 text-emerald-500/70 group-hover/pill:text-emerald-300 flex-shrink-0 ml-0.5" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <button
                         onClick={() => navigator.clipboard.writeText(msg.content)}
                         className="opacity-0 group-hover:opacity-100 absolute top-2 right-2 p-1 text-zinc-400 hover:text-indigo-400 bg-zinc-950/80 rounded-md border border-zinc-800 transition-opacity"

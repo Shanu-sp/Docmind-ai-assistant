@@ -64,4 +64,88 @@ class ChatOrchestrationEndpointTests(TestCase):
         messages = ChatMessage.objects.filter(session=self.session)
         self.assertEqual(messages.count(), 2)
 
+    @patch("chat.services.chat_service.HybridRetriever.retrieve")
+    @patch("chat.services.chat_service.LLMService.answer_question")
+    def test_send_chat_message_populates_citations(self, mock_answer, mock_retrieve):
+        mock_answer.return_value = "DocMind uses pgvector for search [Source 1 (Page 2)]."
+        mock_retrieve.return_value = [
+            {
+                "chunk_id": 42,
+                "document_id": self.doc.id,
+                "page_number": 2,
+                "chunk_index": 1,
+                "content": "DocMind vector search utilizes Supabase pgvector.",
+                "similarity_score": 0.895
+            }
+        ]
+
+        url = f"/api/chat/sessions/{self.session.id}/send-message/"
+        payload = {"content": "How does DocMind search work?"}
+
+        response = self.client.post(url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.json()
+        assistant_data = data["assistant_message"]
+        self.assertIn("citations", assistant_data)
+        self.assertEqual(len(assistant_data["citations"]), 1)
+
+        citation = assistant_data["citations"][0]
+        self.assertEqual(citation["source_id"], 1)
+        self.assertEqual(citation["page_number"], 2)
+        self.assertEqual(citation["chunk_id"], 42)
+        self.assertIn("DocMind vector search", citation["snippet"])
+
+        # Verify DB model
+        assistant_msg_db = ChatMessage.objects.get(id=assistant_data["id"])
+        self.assertEqual(len(assistant_msg_db.citations), 1)
+        self.assertEqual(assistant_msg_db.citations[0]["chunk_id"], 42)
+
+    @patch("documents.services.indexer.DocumentIndexer.index_document")
+    @patch("chat.services.chat_service.LLMService.answer_question")
+    def test_jit_indexing_fallback_triggered(self, mock_answer, mock_index):
+        from chat.services.chat_service import ChatOrchestratorService
+
+        mock_answer.return_value = "Answer with JIT fallback."
+        self.doc.indexing_status = "pending"
+        self.doc.save()
+
+        orchestrator = ChatOrchestratorService()
+        orchestrator.handle_user_message(self.session, "Test JIT")
+
+        # Verify indexer was called
+        mock_index.assert_called_once()
+
+    @patch("chat.services.chat_service.HybridRetriever.retrieve")
+    @patch("chat.services.chat_service.LLMService.stream_question")
+    def test_stream_user_message_persists_citations(self, mock_stream, mock_retrieve):
+        from chat.services.chat_service import ChatOrchestratorService
+
+        mock_stream.return_value = iter(["Streaming ", "chunk ", "response."])
+        mock_retrieve.return_value = [
+            {
+                "chunk_id": 99,
+                "document_id": self.doc.id,
+                "page_number": 1,
+                "chunk_index": 0,
+                "content": "Streaming citation content.",
+                "similarity_score": 0.92
+            }
+        ]
+
+        orchestrator = ChatOrchestratorService()
+        stream_generator = orchestrator.stream_user_message(self.session, "Test streaming")
+
+        # Consume the generator
+        tokens = list(stream_generator)
+        self.assertEqual("".join(tokens), "Streaming chunk response.")
+
+        # Verify saved assistant message in DB has citations
+        assistant_msg = ChatMessage.objects.filter(session=self.session, sender="assistant").last()
+        self.assertIsNotNone(assistant_msg)
+        self.assertEqual(assistant_msg.content, "Streaming chunk response.")
+        self.assertEqual(len(assistant_msg.citations), 1)
+        self.assertEqual(assistant_msg.citations[0]["chunk_id"], 99)
+
+
 
