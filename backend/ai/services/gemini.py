@@ -47,10 +47,13 @@ class GeminiProvider(LLMProvider):
     @classmethod
     def _get_client(cls, key: str):
         try:
-            return genai.Client(api_key=key)
+            return genai.Client(api_key=key, http_options=types.HttpOptions(timeout=20000))
         except Exception as e:
-            logger.error(f"Failed to initialize Gemini Client with key {key[:8]}...: {e}")
-            return None
+            try:
+                return genai.Client(api_key=key)
+            except Exception as inner_e:
+                logger.error(f"Failed to initialize Gemini Client with key {key[:8]}...: {inner_e}")
+                return None
 
     def _get_clients_to_try(self):
         """

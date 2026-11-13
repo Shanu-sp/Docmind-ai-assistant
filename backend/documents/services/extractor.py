@@ -122,6 +122,9 @@ class DocumentExtractor:
             logger.warning(f"Gemini Multimodal OCR fallback failed for {file_path}: {ocr_err}")
             return []
 
+    # Alias for backward compatibility and test suites
+    _ocr_gemini_fallback = _gemini_ocr_pdf
+
     @classmethod
     def _extract_docx_pages(cls, file_path: str) -> List[Dict[str, Any]]:
         try:
