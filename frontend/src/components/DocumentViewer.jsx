@@ -48,9 +48,13 @@ export default function DocumentViewer({
 
   const getMediaUrl = (filePath) => {
     if (!filePath) return '';
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      return filePath;
+    }
     const baseApi = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
     const baseUrl = baseApi.replace(/\/api\/?$/, '');
-    return `${baseUrl}${filePath}`;
+    const cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+    return `${baseUrl}${cleanPath}`;
   };
 
   const handleReanalyzeSubmit = async (e) => {
