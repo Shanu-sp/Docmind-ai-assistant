@@ -9,13 +9,13 @@ from .base import LLMProvider
 
 logger = logging.getLogger(__name__)
 
-# Primary and fallback models for maximum availability
+# Primary and fallback models for maximum availability (prioritizing high-quota 1,500 req/day models)
 FALLBACK_MODELS = [
-    "gemini-3.6-flash",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-1.5-flash",
     "gemini-3.5-flash",
     "gemini-3.5-flash-lite",
-    "gemini-3.1-flash-lite",
-    "gemini-flash-latest",
 ]
 
 class GeminiProvider(LLMProvider):
@@ -28,7 +28,7 @@ class GeminiProvider(LLMProvider):
     MAX_CONTEXT_CHARS = 1_000_000
 
     def __init__(self, api_key: str = None, model: str = None):
-        self.model = model or os.environ.get("GEMINI_MODEL") or "gemini-3.6-flash"
+        self.model = model or os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
         self.api_keys = self._load_api_keys(api_key)
         self.api_key = self.api_keys[0] if self.api_keys else None
         self.client = self._get_client(self.api_key) if self.api_key else None
@@ -48,7 +48,7 @@ class GeminiProvider(LLMProvider):
     @classmethod
     def _get_client(cls, key: str):
         try:
-            return genai.Client(api_key=key, http_options=types.HttpOptions(timeout=12000))
+            return genai.Client(api_key=key, http_options=types.HttpOptions(timeout=7000))
         except Exception as e:
             try:
                 return genai.Client(api_key=key)
@@ -107,9 +107,9 @@ class GeminiProvider(LLMProvider):
 
         last_error = None
         start_time = time.time()
-        max_duration = 25.0  # Guard against Gunicorn and Axios timeouts
+        max_duration = 15.0  # Tight 15s ceiling to prevent Gunicorn (120s) and Axios (90s) timeouts
         attempts = 0
-        max_attempts = 4
+        max_attempts = 3
 
         for client, key_tag in clients_pool:
             if time.time() - start_time > max_duration or attempts >= max_attempts:
@@ -160,9 +160,9 @@ class GeminiProvider(LLMProvider):
         streamed_any = False
         last_error = None
         start_time = time.time()
-        max_duration = 25.0
+        max_duration = 15.0
         attempts = 0
-        max_attempts = 4
+        max_attempts = 3
 
         for client, key_tag in clients_pool:
             if time.time() - start_time > max_duration or attempts >= max_attempts:
@@ -221,8 +221,18 @@ Document Text:
 {document_text[:self.MAX_CONTEXT_CHARS]}
 \"\"\"
 """
+        start_time = time.time()
+        max_duration = 8.0  # Tight 8s ceiling so document uploads never stall
+        attempts = 0
+        max_attempts = 2
+
         for client, key_tag in clients_pool:
-            for model_name in self._get_models_to_try():
+            if time.time() - start_time > max_duration or attempts >= max_attempts:
+                break
+            for model_name in self._get_models_to_try()[:2]:
+                if time.time() - start_time > max_duration or attempts >= max_attempts:
+                    break
+                attempts += 1
                 try:
                     config = types.GenerateContentConfig(
                         response_mime_type="application/json"

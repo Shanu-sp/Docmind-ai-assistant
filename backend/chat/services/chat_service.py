@@ -30,7 +30,7 @@ class ChatOrchestratorService:
         Ensures a document has generated vector chunks before retrieval.
         Triggers indexer on-demand if chunks are missing or status is not 'ready'.
         """
-        if not document:
+        if not document or document.indexing_status == 'failed':
             return
 
         if document.indexing_status != 'ready' or document.chunks.count() == 0:
@@ -125,6 +125,25 @@ class ChatOrchestratorService:
         """
         Handles synchronous message orchestration with RAG context injection and citation persistence.
         """
+        # Guard: Fast rejection for corrupted or failed documents
+        if session.document and session.document.indexing_status == 'failed':
+            doc = session.document
+            user_message = ChatMessage.objects.create(
+                session=session,
+                sender='user',
+                content=user_query
+            )
+            assistant_message = ChatMessage.objects.create(
+                session=session,
+                sender='assistant',
+                content=(
+                    f"⚠️ The attached document ('{doc.title}') could not be processed or contains no readable text. "
+                    "Please re-upload the document or use 'Reanalyze' in the Documents tab before chatting."
+                ),
+                citations=[]
+            )
+            return user_message, assistant_message
+
         # Fetch and prune message history
         past_messages = session.messages.order_by('timestamp')
         total_count = past_messages.count()
@@ -185,6 +204,27 @@ class ChatOrchestratorService:
         """
         Streams response tokens for real-time SSE streaming while capturing citations.
         """
+        # Guard: Fast rejection for corrupted or failed documents
+        if session.document and session.document.indexing_status == 'failed':
+            doc = session.document
+            ChatMessage.objects.create(
+                session=session,
+                sender='user',
+                content=user_query
+            )
+            warning_content = (
+                f"⚠️ The attached document ('{doc.title}') could not be processed or contains no readable text. "
+                "Please re-upload the document or use 'Reanalyze' in the Documents tab before chatting."
+            )
+            ChatMessage.objects.create(
+                session=session,
+                sender='assistant',
+                content=warning_content,
+                citations=[]
+            )
+            yield warning_content
+            return
+
         past_messages = session.messages.order_by('timestamp')
         total_count = past_messages.count()
         if total_count > self.MAX_HISTORY_MESSAGES:
