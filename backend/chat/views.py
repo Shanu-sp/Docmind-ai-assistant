@@ -1,3 +1,4 @@
+import logging
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -6,6 +7,8 @@ from .serializers import ChatSessionSerializer, ChatMessageSerializer, ChatMessa
 from .services.chat_service import ChatOrchestratorService
 
 from django.http import StreamingHttpResponse
+
+logger = logging.getLogger(__name__)
 
 class ChatSessionViewSet(viewsets.ModelViewSet):
     """
@@ -67,6 +70,7 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
                 'assistant_message': ChatMessageSerializer(assistant_msg).data
             }, status=status.HTTP_200_OK)
         except Exception as e:
+            logger.error(f"Error in send_message for session {pk}: {e}", exc_info=True)
             return Response(
                 {'error': str(e) or 'Failed to send message.'},
                 status=status.HTTP_400_BAD_REQUEST

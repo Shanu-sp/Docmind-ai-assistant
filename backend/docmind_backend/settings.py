@@ -168,6 +168,8 @@ from corsheaders.defaults import default_headers, default_methods
 # CORS Configuration
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_PREFLIGHT_MAX_AGE = 86400
+CORS_EXPOSE_HEADERS = ['*']
 
 CORS_ALLOWED_ORIGINS = [
     'https://docmind-ai-assistant.vercel.app',

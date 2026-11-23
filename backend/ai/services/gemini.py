@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import logging
 from typing import List, Dict, Any
 from google import genai
@@ -47,7 +48,7 @@ class GeminiProvider(LLMProvider):
     @classmethod
     def _get_client(cls, key: str):
         try:
-            return genai.Client(api_key=key, http_options=types.HttpOptions(timeout=20000))
+            return genai.Client(api_key=key, http_options=types.HttpOptions(timeout=12000))
         except Exception as e:
             try:
                 return genai.Client(api_key=key)
@@ -105,8 +106,18 @@ class GeminiProvider(LLMProvider):
         formatted_prompt += f"User Question: {prompt}\n\nPlease provide a clear, well-structured markdown answer based on the document context and conversation history."
 
         last_error = None
+        start_time = time.time()
+        max_duration = 25.0  # Guard against Gunicorn and Axios timeouts
+        attempts = 0
+        max_attempts = 4
+
         for client, key_tag in clients_pool:
+            if time.time() - start_time > max_duration or attempts >= max_attempts:
+                break
             for model_name in self._get_models_to_try():
+                if time.time() - start_time > max_duration or attempts >= max_attempts:
+                    break
+                attempts += 1
                 try:
                     response = client.models.generate_content(
                         model=model_name,
@@ -120,7 +131,7 @@ class GeminiProvider(LLMProvider):
                     last_error = e
                     continue
 
-        logger.error(f"All Gemini keys & models exhausted. Final error: {last_error}")
+        logger.error(f"All Gemini keys & models exhausted within safety window. Final error: {last_error}")
         return "⚠️ The AI service is currently experiencing high global traffic. Please wait a few moments and try your question again."
 
     def stream_response(self, prompt: str, context: str = "", history: List[Dict[str, str]] = None):
@@ -148,8 +159,18 @@ class GeminiProvider(LLMProvider):
 
         streamed_any = False
         last_error = None
+        start_time = time.time()
+        max_duration = 25.0
+        attempts = 0
+        max_attempts = 4
+
         for client, key_tag in clients_pool:
+            if time.time() - start_time > max_duration or attempts >= max_attempts:
+                break
             for model_name in self._get_models_to_try():
+                if time.time() - start_time > max_duration or attempts >= max_attempts:
+                    break
+                attempts += 1
                 try:
                     response_stream = client.models.generate_content_stream(
                         model=model_name,
