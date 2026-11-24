@@ -101,6 +101,31 @@ class ChatOrchestrationEndpointTests(TestCase):
         self.assertEqual(len(assistant_msg_db.citations), 1)
         self.assertEqual(assistant_msg_db.citations[0]["chunk_id"], 42)
 
+    @patch("chat.services.chat_service.HybridRetriever.retrieve")
+    @patch("chat.services.chat_service.LLMService.answer_question")
+    def test_citations_suppressed_on_ai_warning(self, mock_answer, mock_retrieve):
+        mock_answer.return_value = "⚠️ The AI service is currently experiencing high global traffic."
+        mock_retrieve.return_value = [
+            {
+                "chunk_id": 42,
+                "document_id": self.doc.id,
+                "page_number": 2,
+                "chunk_index": 1,
+                "content": "DocMind vector search utilizes Supabase pgvector.",
+                "similarity_score": 0.895
+            }
+        ]
+
+        url = f"/api/chat/sessions/{self.session.id}/send-message/"
+        response = self.client.post(url, {"content": "How does DocMind search work?"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.json()
+        assistant_data = data["assistant_message"]
+        self.assertEqual(len(assistant_data["citations"]), 0)
+        assistant_msg_db = ChatMessage.objects.get(id=assistant_data["id"])
+        self.assertEqual(len(assistant_msg_db.citations), 0)
+
     @patch("documents.services.indexer.DocumentIndexer.index_document")
     @patch("chat.services.chat_service.LLMService.answer_question")
     def test_jit_indexing_fallback_triggered(self, mock_answer, mock_index):

@@ -9,13 +9,13 @@ from .base import LLMProvider
 
 logger = logging.getLogger(__name__)
 
-# Primary and fallback models for maximum availability (prioritizing high-quota 1,500 req/day models)
+# Primary and fallback models for maximum availability (prioritizing high-quota, active models)
 FALLBACK_MODELS = [
-    "gemini-2.5-flash",
-    "gemini-2.5-flash-lite",
-    "gemini-1.5-flash",
-    "gemini-3.5-flash",
     "gemini-3.5-flash-lite",
+    "gemini-flash-lite-latest",
+    "gemini-3.5-flash",
+    "gemini-flash-latest",
+    "gemini-3.8-flash",
 ]
 
 class GeminiProvider(LLMProvider):
@@ -28,7 +28,7 @@ class GeminiProvider(LLMProvider):
     MAX_CONTEXT_CHARS = 1_000_000
 
     def __init__(self, api_key: str = None, model: str = None):
-        self.model = model or os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
+        self.model = model or os.environ.get("GEMINI_MODEL") or "gemini-3.5-flash-lite"
         self.api_keys = self._load_api_keys(api_key)
         self.api_key = self.api_keys[0] if self.api_keys else None
         self.client = self._get_client(self.api_key) if self.api_key else None
@@ -48,7 +48,7 @@ class GeminiProvider(LLMProvider):
     @classmethod
     def _get_client(cls, key: str):
         try:
-            return genai.Client(api_key=key, http_options=types.HttpOptions(timeout=7000))
+            return genai.Client(api_key=key, http_options=types.HttpOptions(timeout=12000))
         except Exception as e:
             try:
                 return genai.Client(api_key=key)

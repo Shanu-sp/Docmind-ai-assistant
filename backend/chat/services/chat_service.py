@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import List, Dict, Any, Tuple
 from ai.services import LLMService
 from ai.services.retriever import HybridRetriever
@@ -103,7 +104,11 @@ class ChatOrchestratorService:
 
                 context_parts.append(f"--- [Source {idx} ({page_label})] ---\n{content_text}")
 
-                preview = content_text[:180] + ("..." if len(content_text) > 180 else "")
+                # Clean snippet preview - sanitize leading bullets, formatting marks & collapse extra whitespace
+                clean_snippet = re.sub(r'[\s\n\r]+', ' ', content_text).strip()
+                clean_snippet = re.sub(r'^[\s•\-\*#|]+', '', clean_snippet).strip()
+                preview = clean_snippet[:180] + ("..." if len(clean_snippet) > 180 else "")
+
                 citations_data.append({
                     "source_id": idx,
                     "page_number": page_num,
@@ -190,6 +195,10 @@ class ChatOrchestratorService:
                 "Please verify your Gemini API key in AI Config or try again."
             )
 
+        # Architect Guard: If the AI output is a warning/error notice, suppress citations
+        if not ai_response_text or ai_response_text.strip().startswith("⚠️"):
+            citations_data = []
+
         # 5. Persist Assistant Message with Citations
         assistant_message = ChatMessage.objects.create(
             session=session,
@@ -265,6 +274,11 @@ class ChatOrchestratorService:
             yield error_chunk
 
         full_text = "".join(full_response_chunks)
+
+        # Architect Guard: If the streamed output is a warning/error notice, suppress citations
+        if not full_text or full_text.strip().startswith("⚠️"):
+            citations_data = []
+
         ChatMessage.objects.create(
             session=session,
             sender='assistant',

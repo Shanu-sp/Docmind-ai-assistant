@@ -39,13 +39,22 @@ export default function ChatPanel({
     }
   };
 
+  // Sanitizes citation snippet text for clean presentation
+  const sanitizeSnippet = (text) => {
+    if (!text) return '';
+    return text
+      .replace(/^[\s•\-\*#|]+/, '') // strip leading bullet symbols
+      .replace(/[\s\n\r]+/g, ' ')   // collapse whitespace & newlines
+      .trim();
+  };
+
   // Converts in-text citation patterns like [Source 1 (Page 2)] into markdown links
   // which will be rendered as interactive clickable citation pill badges.
   const formatMessageContentWithCitations = (content) => {
     if (!content) return '';
     return content
-      .replace(/\[Source\s+(\d+)\s*\((?:Page\s*)?(\d+)\)\]/gi, '[$1 · p.$2](#jump-page-$2)')
-      .replace(/\[Source\s+(\d+)\]/gi, '[$1](#jump-source-$1)');
+      .replace(/\[Source\s+(\d+)\s*\((?:Page\s*)?(\d+)\)\]/gi, '[Page $2](#jump-page-$2)')
+      .replace(/\[Source\s+(\d+)\]/gi, '[Source $1](#jump-source-$1)');
   };
 
   return (
@@ -140,8 +149,8 @@ export default function ChatPanel({
                                       e.preventDefault();
                                       onCitationClick && onCitationClick({ page: pageNum });
                                     }}
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 text-[11px] font-semibold text-emerald-300 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 rounded cursor-pointer transition-all active:scale-95 shadow-sm align-baseline"
-                                    title={`Click to jump to Page ${pageNum}`}
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 text-[11px] font-semibold text-emerald-300 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 rounded-md cursor-pointer transition-all active:scale-95 shadow-sm align-baseline"
+                                    title={`Click to jump to Page ${pageNum} in viewer`}
                                   >
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                                     <span>{children}</span>
@@ -166,47 +175,55 @@ export default function ChatPanel({
                         </ReactMarkdown>
                       </div>
 
-                      {/* Referenced Sources Pill Bar */}
+                      {/* Document Sources Bar (Clean Enterprise UI) */}
                       {msg.citations && Array.isArray(msg.citations) && msg.citations.length > 0 && (
                         <div className="mt-3 pt-2.5 border-t border-zinc-800/80">
                           <div className="flex items-center justify-between gap-1 mb-2">
-                            <div className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-400">
+                            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-zinc-300">
                               <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
-                              <span>Referenced Sources ({msg.citations.length})</span>
+                              <span>Document Sources</span>
+                              <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 rounded-full">
+                                {msg.citations.length} verified
+                              </span>
                             </div>
+                            <span className="text-[10px] text-zinc-500 hidden sm:inline">Click to jump in viewer</span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
-                            {msg.citations.map((citation, cIdx) => (
-                              <button
-                                key={cIdx}
-                                type="button"
-                                onClick={() =>
-                                  onCitationClick &&
-                                  onCitationClick({
-                                    page: citation.page_number,
-                                    sourceId: citation.source_id,
-                                    chunkId: citation.chunk_id
-                                  })
-                                }
-                                className="group/pill inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/70 border border-emerald-800/50 hover:border-emerald-600/70 rounded-lg transition-all text-left cursor-pointer active:scale-95 shadow-sm"
-                                title={
-                                  citation.snippet
-                                    ? `Page ${citation.page_number || 'N/A'}: ${citation.snippet}`
-                                    : `Source ${citation.source_id}`
-                                }
-                              >
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 group-hover/pill:scale-125 transition-transform flex-shrink-0" />
-                                <span className="font-semibold text-emerald-200">
-                                  {citation.page_number ? `p. ${citation.page_number}` : `Source ${citation.source_id}`}
-                                </span>
-                                {citation.snippet && (
-                                  <span className="text-[10px] text-zinc-400 truncate max-w-[130px] group-hover/pill:text-zinc-200">
-                                    {citation.snippet.replace(/\n+/g, ' ')}
+                            {msg.citations.map((citation, cIdx) => {
+                              const cleanSnippet = sanitizeSnippet(citation.snippet);
+                              const pageNum = citation.page_number;
+                              const pageLabel = pageNum ? `Page ${pageNum}` : `Source ${citation.source_id || cIdx + 1}`;
+                              return (
+                                <button
+                                  key={cIdx}
+                                  type="button"
+                                  onClick={() =>
+                                    onCitationClick &&
+                                    onCitationClick({
+                                      page: pageNum,
+                                      sourceId: citation.source_id,
+                                      chunkId: citation.chunk_id
+                                    })
+                                  }
+                                  className="group/pill inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-emerald-300 bg-zinc-900/90 hover:bg-emerald-950/70 border border-zinc-700/60 hover:border-emerald-600/70 rounded-lg transition-all text-left cursor-pointer active:scale-95 shadow-sm max-w-full"
+                                  title={
+                                    cleanSnippet
+                                      ? `${pageLabel}: "${cleanSnippet}"\nClick to view in document`
+                                      : `Click to view ${pageLabel} in document`
+                                  }
+                                >
+                                  <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex-shrink-0">
+                                    {pageLabel}
                                   </span>
-                                )}
-                                <ExternalLink className="w-2.5 h-2.5 text-emerald-500/70 group-hover/pill:text-emerald-300 flex-shrink-0 ml-0.5" />
-                              </button>
-                            ))}
+                                  {cleanSnippet && (
+                                    <span className="text-[11px] text-zinc-400 truncate max-w-[140px] sm:max-w-[190px] group-hover/pill:text-zinc-200">
+                                      {cleanSnippet}
+                                    </span>
+                                  )}
+                                  <ExternalLink className="w-3 h-3 text-emerald-500/70 group-hover/pill:text-emerald-300 flex-shrink-0 ml-auto" />
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
